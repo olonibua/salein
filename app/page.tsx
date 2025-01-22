@@ -1,6 +1,14 @@
-import Invoice from "@/components/Invoice/Invoice";
-import InvoiceCreationPanel from "@/components/InvoicePanel/InvoiceCreationPanel";
+import dynamic from "next/dynamic";
 import { InvoiceProvider } from "@/contexts/InvoiceContext";
+
+const Invoice = dynamic(() => import("@/components/Invoice/Invoice"), {
+  ssr: false,
+});
+
+const InvoiceCreationPanel = dynamic(
+  () => import("@/components/InvoicePanel/InvoiceCreationPanel"),
+  { ssr: false }
+);
 
 export default function Home() {
   return (
