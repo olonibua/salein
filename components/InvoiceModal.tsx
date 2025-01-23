@@ -11,8 +11,7 @@ interface InvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   recipientEmail: string;
-  reminderEnabled: boolean;
-  mode?: "create" | "settings";
+  // Remove reminderEnabled and mode if they're not being used
   settings?: {
     teamEmails: string[];
     reminderCount: number;
@@ -24,8 +23,6 @@ const InvoiceModal = ({
   isOpen,
   onClose,
   recipientEmail,
-  reminderEnabled,
-  mode = "create",
   settings,
 }: InvoiceModalProps) => {
   const [isSending, setIsSending] = useState(false);

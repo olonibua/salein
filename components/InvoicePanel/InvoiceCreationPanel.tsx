@@ -872,7 +872,6 @@ const InvoiceCreationPanel = ({
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
         recipientEmail={invoiceData.to.email}
-        reminderEnabled={false}
       />
     </>
   );
