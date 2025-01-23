@@ -780,6 +780,124 @@ const InvoiceCreationPanel = ({
                 )}
               </div>
 
+              {/* Company Selection */}
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-medium">Company Details</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedCompany(null);
+                      setEditingCompany(false);
+                    }}
+                  >
+                    <Plus size={16} className="mr-2" />
+                    New Company
+                  </Button>
+                </div>
+
+                {selectedCompany ? (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-medium">
+                          {
+                            companies.find((c) => c.id === selectedCompany)
+                              ?.name
+                          }
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {
+                            companies.find((c) => c.id === selectedCompany)
+                              ?.email
+                          }
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          className="text-sm text-blue-500"
+                          onClick={() => setEditingCompany(true)}
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          className="text-sm text-gray-500"
+                          onClick={() => setSelectedCompany(null)}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {companies.length > 0 && !editingCompany && (
+                      <div className="space-y-2">
+                        {companies.map((company) => (
+                          <div
+                            key={company.id}
+                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                            onClick={() => {
+                              setSelectedCompany(company.id);
+                              updateFromData({
+                                name: company.name,
+                                email: company.email,
+                                address: company.address,
+                                phone: company.phone,
+                              });
+                              updateInvoiceData({ website: company.website });
+                            }}
+                          >
+                            <div>
+                              <p className="font-medium">{company.name}</p>
+                              <p className="text-sm text-gray-600">
+                                {company.email}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {(!companies.length || editingCompany) && (
+                      <div className="space-y-4">
+                        <Input
+                          placeholder="Company name"
+                          value={invoiceData.from.name}
+                          onChange={(e) =>
+                            updateFromData({ name: e.target.value })
+                          }
+                        />
+                        <Input
+                          placeholder="Company email"
+                          value={invoiceData.from.email}
+                          onChange={(e) =>
+                            updateFromData({ email: e.target.value })
+                          }
+                        />
+                        <Input
+                          placeholder="Company website"
+                          value={invoiceData.website}
+                          onChange={(e) =>
+                            updateInvoiceData({ website: e.target.value })
+                          }
+                        />
+                        {invoiceData.from.name && invoiceData.from.email && (
+                          <Button
+                            onClick={handleAddNewCompany}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            Save Company Details
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Invoice Details - Adjusted for mobile */}
               <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
                 <div>
