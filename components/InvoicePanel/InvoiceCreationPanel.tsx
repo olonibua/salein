@@ -282,15 +282,15 @@ const InvoiceCreationPanel = ({
           ${showInvoiceModal ? "hidden" : ""}
           ${
             isMobileView
-              ? "w-full h-screen fixed inset-0 bg-white z-50"
+              ? "w-full h-screen fixed inset-0 bg-white z-50 flex flex-col"
               : "w-[30%] min-w-[300px] h-[80vh] border-r rounded-xl border-gray-200"
           }
           flex flex-col bg-white
           md:w-[30%] md:min-w-[300px] md:h-[80vh] md:sticky md:top-0
         `}
       >
-        {/* Fixed Header - Adjusted for mobile */}
-        <div className="px-4 pt-4 border-b border-gray-100 bg-white md:px-6 md:pt-6">
+        {/* Fixed Header - Make it truly fixed for mobile */}
+        <div className="flex-none px-4 pt-4 border-b border-gray-100 bg-white md:px-6 md:pt-6">
           <h1 className="text-lg font-semibold mb-4 md:text-2xl md:mb-6">
             Create invoice
           </h1>
@@ -333,8 +333,15 @@ const InvoiceCreationPanel = ({
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+        {/* Scrollable Content - Adjust for mobile */}
+        <div
+          className={`
+          flex-1 overflow-y-auto
+          ${isMobileView ? "pb-[80px]" : ""}
+          scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent 
+          hover:scrollbar-thumb-gray-400
+        `}
+        >
           {activeTab === "information" && (
             <div className="p-4 md:p-6">
               <div className="mb-6">
@@ -832,28 +839,39 @@ const InvoiceCreationPanel = ({
                   />
                 </div>
               </div>
-
-              {/* Create Invoice Button - Adjusted for mobile */}
-              <div className="mt-6 sticky bottom-0 bg-white py-3 md:py-4 border-t">
-                <button
-                  onClick={() => {
-                    handleCreateInvoice();
-                    onCreateInvoice();
-                  }}
-                  className="w-full bg-black text-white rounded-lg py-2.5 md:py-3 px-4 hover:bg-gray-800 transition-colors text-sm md:text-base"
-                >
-                  Create Invoice
-                </button>
-              </div>
             </div>
           )}
         </div>
+
+        {/* Create Invoice Button - Make it fixed for mobile */}
+        {activeTab === "new" && (
+          <div
+            className={`
+            ${
+              isMobileView
+                ? "fixed bottom-0 left-0 right-0 bg-white shadow-lg"
+                : "sticky bottom-0 bg-white"
+            }
+            py-3 md:py-4 border-t px-4
+          `}
+          >
+            <button
+              onClick={() => {
+                handleCreateInvoice();
+                onCreateInvoice();
+              }}
+              className="w-full bg-black text-white rounded-lg py-2.5 md:py-3 px-4 hover:bg-gray-800 transition-colors text-sm md:text-base"
+            >
+              Create Invoice
+            </button>
+          </div>
+        )}
       </div>
 
       <InvoiceModal
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
-        recipientEmail=""
+        recipientEmail={invoiceData.to.email}
         reminderEnabled={false}
       />
     </>
