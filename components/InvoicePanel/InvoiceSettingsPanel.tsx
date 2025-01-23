@@ -8,10 +8,10 @@ import { ArrowLeft } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import { cn } from "@/lib/utils";
 
-interface TeamMember {
-  email: string;
-  id: string;
-}
+// interface TeamMember {
+//   email: string;
+//   id: string;
+// }
 
 interface InvoiceSettingsPanelProps {
   onBack: () => void;
@@ -294,8 +294,8 @@ const InvoiceSettingsPanel = ({ onBack }: InvoiceSettingsPanelProps) => {
           onBack();
         }}
         recipientEmail={settings.recipientEmail}
-        reminderEnabled={settings.reminderEnabled}
-        mode="settings"
+        // reminderEnabled={settings.reminderEnabled}
+        // mode="settings"
         settings={{
           teamEmails: settings.teamEmails,
           reminderCount: settings.reminderCount,
