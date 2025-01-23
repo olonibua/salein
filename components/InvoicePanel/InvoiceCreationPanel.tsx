@@ -35,6 +35,20 @@ interface Customer {
   phone?: string;
 }
 
+interface CompanyDetails {
+  id: string;
+  name: string;
+  email: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+  };
+  phone?: string;
+  website?: string;
+}
+
 interface InvoiceCreationPanelProps {
   onUpload: () => void;
   onCreateInvoice: () => void;
@@ -68,11 +82,33 @@ const InvoiceCreationPanel = ({
   // const router = useRouter();
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [companies, setCompanies] = useState<CompanyDetails[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [editingCompany, setEditingCompany] = useState<boolean>(false);
 
-  // Save customers to localStorage whenever they change
+  // Load customers and companies from localStorage on mount
   useEffect(() => {
-    localStorage.setItem("customers", JSON.stringify(customers));
-  }, [customers]);
+    const savedCustomers = localStorage.getItem("customers");
+    const savedCompanies = localStorage.getItem("companies");
+
+    if (savedCustomers) {
+      setCustomers(JSON.parse(savedCustomers));
+    }
+    if (savedCompanies) {
+      setCompanies(JSON.parse(savedCompanies));
+    }
+  }, []);
+
+  // Save customers and companies to localStorage whenever they change
+  useEffect(() => {
+    if (customers.length > 0) {
+      // Only save if there are customers
+      localStorage.setItem("customers", JSON.stringify(customers));
+    }
+    if (companies.length > 0) {
+      localStorage.setItem("companies", JSON.stringify(companies));
+    }
+  }, [customers, companies]);
 
   // Set default dates when component mounts
   useEffect(() => {
@@ -187,8 +223,16 @@ const InvoiceCreationPanel = ({
         address: invoiceData.to.address,
         phone: invoiceData.to.phone,
       };
-      setCustomers([...customers, newCustomer]);
+
+      // Update customers state with new customer
+      const updatedCustomers = [...customers, newCustomer];
+      setCustomers(updatedCustomers);
+
+      // Explicitly save to localStorage
+      localStorage.setItem("customers", JSON.stringify(updatedCustomers));
+
       setSelectedCustomer(newCustomer.id);
+      toast.success("Customer saved successfully");
     }
   };
 
@@ -274,6 +318,48 @@ const InvoiceCreationPanel = ({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const handleAddNewCompany = () => {
+    if (invoiceData.from.name && invoiceData.from.email) {
+      const newCompany: CompanyDetails = {
+        id: Date.now().toString(),
+        name: invoiceData.from.name,
+        email: invoiceData.from.email,
+        address: invoiceData.from.address,
+        phone: invoiceData.from.phone,
+        website: invoiceData.website,
+      };
+
+      const updatedCompanies = [...companies, newCompany];
+      setCompanies(updatedCompanies);
+      localStorage.setItem("companies", JSON.stringify(updatedCompanies));
+
+      setSelectedCompany(newCompany.id);
+      toast.success("Company details saved successfully");
+    }
+  };
+
+  // const handleSaveEditedCompany = () => {
+  //   if (selectedCompany && invoiceData.from.name && invoiceData.from.email) {
+  //     const updatedCompanies = companies.map((company) =>
+  //       company.id === selectedCompany
+  //         ? {
+  //             ...company,
+  //             name: invoiceData.from.name,
+  //             email: invoiceData.from.email,
+  //             address: invoiceData.from.address,
+  //             phone: invoiceData.from.phone,
+  //             website: invoiceData.website,
+  //           }
+  //         : company
+  //     );
+
+  //     setCompanies(updatedCompanies);
+  //     localStorage.setItem("companies", JSON.stringify(updatedCompanies));
+  //     setEditingCompany(false);
+  //     toast.success("Company details updated successfully");
+  //   }
+  // };
 
   return (
     <>

@@ -49,7 +49,7 @@ export default function Home() {
 
   return (
     <InvoiceProvider>
-      <div className="flex flex-col h-[110vh]">
+      <div className="flex flex-col h-screen bg-gray-100">
         <nav className="hidden md:block sticky top-0 z-50 bg-white shadow-sm px-4 py-3">
           <h2 className="font-medium text-xl">SaleIn</h2>
         </nav>
@@ -64,7 +64,7 @@ export default function Home() {
             ) : (
               <>
                 <div className="flex">
-                  <div className="hidden md:block flex-1">
+                  <div className="hidden md:block flex-1 ml-16">
                     <Invoice />
                   </div>
                   <InvoiceCreationPanel

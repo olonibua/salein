@@ -76,33 +76,33 @@ const Invoice = () => {
   return (
     <div className="flex h-full">
       {/* Container for zoom panel and invoice */}
-      <div className="flex gap-2 mx-auto">
+      <div className="flex gap-2">
         {/* Zoom Panel */}
-        <div className="w-12 bg-white rounded-l-xl shadow-sm px-2 py-6 h-[280px] flex flex-col items-center justify-center sticky ">
+        <div className="w-12 bg-[#1a1b1aef] rounded-l-xl shadow-sm px-2 py-6 h-[280px] flex flex-col items-center justify-center sticky">
           <div className="h-full flex flex-col items-center justify-between">
             <button
               onClick={() => setZoom(Math.min(zoom + 10, 120))}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               title="Zoom in"
             >
-              <Plus size={18} className="text-gray-600" />
+              <Plus size={18} className="text-white" />
             </button>
 
             <div className="flex-1 flex items-center">
-              <div className="bg-black rounded-lg p-2 m-2">
+              <div className="bg-white rounded-lg p-2 m-2">
                 <Slider
                   value={[zoom]}
                   onValueChange={(value) => setZoom(value[0])}
                   orientation="vertical"
                   min={50}
                   max={120}
-                  step={1}
-                  className="h-24 flex items-center justify-center mx-auto"
+                  step={10}
+                  className="h-24"
                 />
               </div>
             </div>
 
-            <div className="text-xs font-medium text-gray-600 my-2">
+            <div className="text-[10px] font-medium text-white my-2">
               {zoom}%
             </div>
 
@@ -111,33 +111,37 @@ const Invoice = () => {
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               title="Zoom out"
             >
-              <Minus size={18} className="text-gray-600" />
+              <Minus size={18} className="text-white" />
             </button>
           </div>
         </div>
 
-        {/* Invoice Content */}
+        {/* Invoice Content - A4 Format */}
         <div className="h-full">
           <div
             id="invoice-content"
-            className="w-[16cm] bg-white rounded-r-xl shadow-sm"
+            className="w-[170mm] h-[207mm] bg-white shadow-sm"
             style={{
               transform: `scale(${zoom / 100})`,
               transformOrigin: "top left",
               transition: "transform 0.2s ease-in-out",
+              margin: "0 auto",
+              paddingTop: "12mm",
+              padding: "12mm", // Standard A4 margins
+              boxSizing: "border-box",
             }}
           >
-            <div className="p-8 rounded-none bg-white">
+            <div className="h-full">
               {/* Header */}
-              <div className="flex justify-between mb-8">
+              <div className="flex justify-between mb-10">
                 <div>
-                  <h1 className="text-4xl font-bold text-gray-800">Invoice</h1>
-                  <div className="mt-2 text-sm text-gray-600">
+                  <h1 className="text-7xl font-bold text-gray-800">Invoice</h1>
+                  <div className="text-sm text-gray-600 mt-2">
                     <p>Invoice date: {formatDate(invoiceData.invoiceDate)}</p>
                     <p>Due date: {formatDate(invoiceData.dueDate)}</p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right mt-2">
                   <p className="text-sm text-gray-600">
                     Invoice no: #{invoiceData.invoiceNumber}
                   </p>
@@ -148,7 +152,7 @@ const Invoice = () => {
               </div>
 
               {/* Addresses */}
-              <div className="grid grid-cols-2 gap-8 mb-8">
+              <div className="grid grid-cols-2 gap-8 mb-8 mt-5 pt-5 border-t border-gray-100">
                 <div>
                   <h2 className="text-sm font-semibold text-gray-600 mb-2">
                     From:
@@ -198,10 +202,10 @@ const Invoice = () => {
               </div>
 
               {/* Items Table */}
-              <div className="mb-8">
+              <div className="mb-8 mt-2">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200">
+                    <tr className="border-b border-gray-100">
                       <th className="text-left py-2 text-sm font-semibold text-gray-600">
                         Item
                       </th>
@@ -236,7 +240,7 @@ const Invoice = () => {
               </div>
 
               {/* Summary */}
-              <div className="border-t border-gray-200 pt-4">
+              <div className="border-t border-gray-100 pt-4 mt-1">
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-gray-600">Subtotal</span>
                   <span className="text-sm">
@@ -251,14 +255,14 @@ const Invoice = () => {
                     £{invoiceData.taxAmount.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between font-bold mt-4 pt-4 border-t border-gray-200">
+                <div className="flex justify-between font-bold mt-4 pt-4 border-t border-gray-100">
                   <span>Total Amount Due</span>
                   <span>£{invoiceData.total.toFixed(2)}</span>
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="mt-8 pt-4 border-t border-gray-200">
+              <div className=" border-t border-gray-100 pt-16">
                 <p className="text-sm text-gray-600 mb-1">
                   Payment Memo: {invoiceData.paymentMemo}
                 </p>
