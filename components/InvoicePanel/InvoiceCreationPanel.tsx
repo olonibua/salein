@@ -16,9 +16,9 @@ import {
   ChevronDown,
   Search,
   Calendar,
+  Upload,
 } from "lucide-react";
 import { Switch } from "../ui/switch";
-// import { useRouter } from "next/navigation";
 import InvoiceModal from "../InvoiceModal";
 import { toast } from "sonner";
 
@@ -35,7 +35,15 @@ interface Customer {
   phone?: string;
 }
 
-const InvoiceCreationPanel = () => {
+interface InvoiceCreationPanelProps {
+  onUpload: () => void;
+  onCreateInvoice: () => void;
+}
+
+const InvoiceCreationPanel = ({
+  onUpload,
+  onCreateInvoice,
+}: InvoiceCreationPanelProps) => {
   const {
     invoiceData,
     updateFromData,
@@ -462,6 +470,20 @@ const InvoiceCreationPanel = () => {
                   </div>
                 </div>
               </div>
+
+              <div className="mt-8 border-t pt-6">
+                <h3 className="text-sm text-gray-500 font-medium mb-4">
+                  UPLOAD EXISTING INVOICE
+                </h3>
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2"
+                  onClick={onUpload}
+                >
+                  <Upload size={16} />
+                  <span>Upload Invoice</span>
+                </Button>
+              </div>
             </div>
           )}
 
@@ -814,7 +836,10 @@ const InvoiceCreationPanel = () => {
               {/* Create Invoice Button - Adjusted for mobile */}
               <div className="mt-6 sticky bottom-0 bg-white py-3 md:py-4 border-t">
                 <button
-                  onClick={handleCreateInvoice}
+                  onClick={() => {
+                    handleCreateInvoice();
+                    onCreateInvoice();
+                  }}
                   className="w-full bg-black text-white rounded-lg py-2.5 md:py-3 px-4 hover:bg-gray-800 transition-colors text-sm md:text-base"
                 >
                   Create Invoice
@@ -828,6 +853,8 @@ const InvoiceCreationPanel = () => {
       <InvoiceModal
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
+        recipientEmail=""
+        reminderEnabled={false}
       />
     </>
   );

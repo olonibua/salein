@@ -81,14 +81,14 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
       phone: "",
     },
     poNumber: "",
-    invoiceNumber: "MONI-934",
+    invoiceNumber: "Salein-934",
     items: [],
     subtotal: 0,
     taxRate: 0.1,
     taxAmount: 0,
     total: 0,
     paymentMemo: "",
-    website: "www.monivoice.com",
+    website: "www.salein.com",
   });
 
   const updateInvoiceData = (data: Partial<InvoiceData>) => {

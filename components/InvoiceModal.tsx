@@ -1,15 +1,34 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Copy, QrCode, FileDown, Edit, Plus } from "lucide-react";
+import { Copy, QrCode, FileDown } from "lucide-react";
 import { Button } from "./ui/button";
 import { useInvoice } from "@/contexts/InvoiceContext";
 import html2pdf from "html2pdf.js";
+import { toast } from "sonner";
+import Invoice from "./Invoice/Invoice";
+import { useState } from "react";
 
 interface InvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
+  recipientEmail: string;
+  reminderEnabled: boolean;
+  mode?: "create" | "settings";
+  settings?: {
+    teamEmails: string[];
+    reminderCount: number;
+    reminderInterval: "daily" | "weekly" | "biweekly" | "monthly";
+  };
 }
 
-const InvoiceModal = ({ isOpen, onClose }: InvoiceModalProps) => {
+const InvoiceModal = ({
+  isOpen,
+  onClose,
+  recipientEmail,
+  reminderEnabled,
+  mode = "create",
+  settings,
+}: InvoiceModalProps) => {
+  const [isSending, setIsSending] = useState(false);
   const { invoiceData } = useInvoice();
 
   const handleCopyLink = () => {
@@ -22,6 +41,11 @@ const InvoiceModal = ({ isOpen, onClose }: InvoiceModalProps) => {
 
   const handleDownloadPDF = () => {
     const invoice = document.getElementById("invoice-content");
+    if (!invoice) {
+      toast.error("Invoice content not found");
+      return;
+    }
+
     const opt = {
       margin: 1,
       filename: `invoice-${invoiceData.invoiceNumber}.pdf`,
@@ -30,17 +54,85 @@ const InvoiceModal = ({ isOpen, onClose }: InvoiceModalProps) => {
       jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
     };
 
-    if (invoice) {
+    // Remove zoom transformation before generating PDF
+    const originalTransform = invoice.style.transform;
+    invoice.style.transform = "scale(1)";
+
+    html2pdf()
+      .set(opt)
+      .from(invoice)
+      .save()
+      .then(() => {
+        invoice.style.transform = originalTransform;
+        toast.success("Invoice downloaded successfully");
+      })
+      .catch((error: Error) => {
+        console.error("PDF download error:", error);
+        toast.error("Failed to download invoice");
+      });
+  };
+
+  const handleSendInvoice = async () => {
+    if (isSending) return;
+    setIsSending(true);
+
+    try {
+      const invoice = document.getElementById("invoice-content");
+      if (!invoice) {
+        toast.error("Invoice content not found");
+        return;
+      }
+
+      const opt = {
+        margin: 1,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+      };
+
+      // Remove zoom transformation before generating PDF
       const originalTransform = invoice.style.transform;
       invoice.style.transform = "scale(1)";
 
-      html2pdf()
+      // Generate PDF buffer
+      const pdfBuffer = await html2pdf()
         .set(opt)
         .from(invoice)
-        .save()
-        .then(() => {
-          invoice.style.transform = originalTransform;
-        });
+        .outputPdf("arraybuffer");
+
+      // Reset transform
+      invoice.style.transform = originalTransform;
+
+      const response = await fetch("/api/notifications/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: recipientEmail,
+          teamEmails: settings?.teamEmails || [],
+          subject: `Invoice #${invoiceData.invoiceNumber} from ${invoiceData.from.name}`,
+          htmlContent: `
+            <h1>Invoice #${invoiceData.invoiceNumber}</h1>
+            <p>Amount: £${invoiceData.total.toFixed(2)}</p>
+            <p>Due Date: ${invoiceData.dueDate}</p>
+            <p>Payment reminders will be sent automatically.</p>
+          `,
+          pdfBuffer: Array.from(new Uint8Array(pdfBuffer)),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send invoice");
+      }
+
+      toast.success("Invoice sent successfully!");
+      onClose();
+    } catch (error) {
+      console.error("Error sending invoice:", error);
+      toast.error("Failed to send invoice");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -53,9 +145,13 @@ const InvoiceModal = ({ isOpen, onClose }: InvoiceModalProps) => {
               Your Invoice is ready! 🎉
             </h2>
             <p className="text-gray-500 mt-2">
-              The invoice is ready. Copy the link, generate a QR code, or
-              download the file to share.
+              Send this invoice to {recipientEmail}
             </p>
+          </div>
+
+          {/* Hidden Invoice for PDF Generation */}
+          <div className="hidden">
+            <Invoice />
           </div>
 
           {/* Invoice Card */}
@@ -109,13 +205,15 @@ const InvoiceModal = ({ isOpen, onClose }: InvoiceModalProps) => {
 
           {/* Bottom Buttons */}
           <div className="flex gap-4 mt-4">
-            <Button variant="outline" className="flex-1 gap-2">
-              <Edit size={16} />
-              Edit invoice
+            <Button variant="outline" className="flex-1" onClick={onClose}>
+              Cancel
             </Button>
-            <Button variant="default" className="flex-1 gap-2 bg-black">
-              <Plus size={16} />
-              New invoice
+            <Button
+              className="flex-1 bg-black"
+              onClick={handleSendInvoice}
+              disabled={isSending}
+            >
+              {isSending ? "Sending..." : "Send Invoice"}
             </Button>
           </div>
         </div>
