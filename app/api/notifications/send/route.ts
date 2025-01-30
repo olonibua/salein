@@ -23,7 +23,8 @@ export async function POST(req: Request) {
     } = await req.json();
 
     const data = await resend.emails.send({
-      from: "Salein <onboarding@resend.dev>",
+      // from: "Salein <onboarding@resend.dev>",
+      from: "Salein <invoices@olonts.site>",
       to: [to],
       cc: teamEmails,
       subject: subject,
