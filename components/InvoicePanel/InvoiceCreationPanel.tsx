@@ -17,15 +17,33 @@ import {
   Search,
   Calendar,
   Upload,
+  ArrowRight,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { Switch } from "../ui/switch";
 import InvoiceModal from "../InvoiceModal";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { invoiceTemplates } from "@/components/Invoice/templates";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import codes from "currency-codes/data";
 
 interface Customer {
   id: string;
   name: string;
-  email: string;
+  email: string;  
   address?: {
     street?: string;
     city?: string;
@@ -54,6 +72,18 @@ interface InvoiceCreationPanelProps {
   onCreateInvoice: () => void;
 }
 
+interface CurrencyType {
+  code: string;
+  number: string;
+  currency: string;
+}
+
+const allCurrencies = codes.map((currency: CurrencyType) => ({
+  label: `${currency.currency} (${currency.code})`,
+  value: currency.code,
+  symbol: currency.code
+}));
+
 const InvoiceCreationPanel = ({
   onUpload,
   onCreateInvoice,
@@ -64,11 +94,13 @@ const InvoiceCreationPanel = ({
     updateToData,
     updateInvoiceData,
     updateItems,
+    setLogo,
   } = useInvoice();
   const [activeTab, setActiveTab] = useState("information");
   const [accountType, setAccountType] = useState("personal");
   const [showAddress, setShowAddress] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
+  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
   // const items = invoiceData.items;
   const [customers, setCustomers] = useState<Customer[]>(() => {
     // Load customers from localStorage on initial render
@@ -85,6 +117,28 @@ const InvoiceCreationPanel = ({
   const [companies, setCompanies] = useState<CompanyDetails[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [editingCompany, setEditingCompany] = useState<boolean>(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [savedPersonalDetails, setSavedPersonalDetails] = useState<any[]>(() => {
+    const saved = localStorage.getItem('personalDetails');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [open, setOpen] = useState(false);
+  
+  const [selectedCurrency, setSelectedCurrency] = useState(
+    allCurrencies.find(c => c.value === 'USD') || allCurrencies[0]
+  );
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogo(reader.result as string); // Directly set logo in context
+        console.log("Logo automatically applied");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Load customers and companies from localStorage on mount
   useEffect(() => {
@@ -361,6 +415,44 @@ const InvoiceCreationPanel = ({
   //   }
   // };
 
+  const handleNextToTemplates = () => {
+    setActiveTab("templates");
+  };
+
+  const handleSavePersonalDetails = () => {
+    if (invoiceData.from.name && invoiceData.from.email) {
+      const newDetails = {
+        id: Date.now().toString(),
+        name: invoiceData.from.name,
+        email: invoiceData.from.email,
+        address: invoiceData.from.address,
+        phone: invoiceData.from.phone,
+        website: invoiceData.website,
+      };
+
+      const updatedDetails = [...savedPersonalDetails, newDetails];
+      setSavedPersonalDetails(updatedDetails);
+      localStorage.setItem('personalDetails', JSON.stringify(updatedDetails));
+      toast.success("Personal details saved successfully");
+    }
+  };
+
+  const handleSelectSavedDetails = (details: any) => {
+    updateFromData({
+      name: details.name,
+      email: details.email,
+      address: details.address,
+      phone: details.phone,
+    });
+    updateInvoiceData({ website: details.website });
+  };
+
+  // Update invoice context to include currency
+  const handleCurrencySelect = (currency: typeof allCurrencies[0]) => {
+    setSelectedCurrency(currency);
+    updateInvoiceData({ currency: currency });
+  };
+
   return (
     <>
       <div
@@ -551,58 +643,162 @@ const InvoiceCreationPanel = ({
                         {showLogo && (
                           <div className="border-2 border-dashed rounded-lg p-4 text-center">
                             <div className="w-20 h-20 bg-gray-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                              <span className="text-gray-400">Logo</span>
+                              <label className="cursor-pointer w-full h-full flex items-center justify-center">
+                                <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  onChange={handleLogoUpload} 
+                                  className="hidden"
+                                />
+                                <span className="text-sm text-gray-500">
+                                  Drop logo here or click to browse
+                                </span>
+                              </label>
                             </div>
-                            <p className="text-sm text-gray-500">
-                              Drop your logo here or browse
-                            </p>
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {savedPersonalDetails.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm text-gray-500 font-medium mb-4">
+                      SAVED DETAILS
+                    </h3>
+                    <div className="space-y-2">
+                      {savedPersonalDetails.map((details) => (
+                        <div
+                          key={details.id}
+                          className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                          onClick={() => handleSelectSavedDetails(details)}
+                        >
+                          <p className="font-medium">{details.name}</p>
+                          <p className="text-sm text-gray-600">{details.email}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSavePersonalDetails}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Save Personal Details
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-8 border-t pt-6">
                 <h3 className="text-sm text-gray-500 font-medium mb-4">
-                  UPLOAD EXISTING INVOICE
+                  PROCEED TO SELECT TEMPLATE
                 </h3>
                 <Button
                   variant="outline"
-                  className="w-full flex items-center justify-center gap-2"
-                  onClick={onUpload}
+                  className="w-full flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800"
+                  onClick={handleNextToTemplates}
                 >
-                  <Upload size={16} />
-                  <span>Upload Invoice</span>
+                  <ArrowRight size={16} />
+                  <span>Next</span>
                 </Button>
               </div>
             </div>
           )}
 
           {activeTab === "templates" && (
-            <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border rounded-lg p-4 cursor-pointer hover:border-blue-500">
-                <div className="bg-gray-50 rounded-lg p-6 mb-2">
-                  <div className="w-full h-32 bg-white rounded shadow-sm"></div>
-                </div>
-                <p className="text-sm font-medium">Template 001</p>
-                <p className="text-xs text-gray-500">Logo at the top right</p>
+            <div className="p-4 md:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {invoiceTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className={cn(
+                      "border rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors",
+                      selectedTemplate === template.id && "border-blue-500 bg-blue-50"
+                    )}
+                    onClick={() => setSelectedTemplate(template.id)}
+                  >
+                    <div className="bg-gray-50 rounded-lg p-6 mb-2">
+                      <div className="w-full h-32 bg-white rounded shadow-sm">
+                        {/* Template preview image or placeholder */}
+                      </div>
+                    </div>
+                    <p className="text-sm font-medium">{template.name}</p>
+                    <p className="text-xs text-gray-500">{template.description}</p>
+                  </div>
+                ))}
               </div>
-              <div className="border rounded-lg p-4 cursor-pointer">
-                <div className="bg-gray-50 rounded-lg p-6 mb-2">
-                  <div className="w-full h-32 bg-white rounded shadow-sm"></div>
-                </div>
-                <p className="text-sm font-medium">Template 002</p>
-                <p className="text-xs text-gray-500">
-                  Logo at the bottom right
-                </p>
+              
+              {/* Next button */}
+              <div className="mt-8 border-t pt-6">
+                <Button
+                  className="w-full flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800"
+                  onClick={() => setActiveTab("new")}
+                >
+                  <span>Continue to Invoice</span>
+                  <ArrowRight size={16} />
+                </Button>
               </div>
             </div>
           )}
 
           {activeTab === "new" && (
             <div className="p-4 md:p-6">
+              <div className="mb-6">
+                <label className="text-sm mb-1 block text-gray-500">
+                  Currency
+                </label>
+                <Popover open={open} onOpenChange={setOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={open}
+                      className="w-full justify-between"
+                    >
+                      {selectedCurrency.label}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search currency..." />
+                      <CommandEmpty>No currency found.</CommandEmpty>
+                      <CommandGroup className="max-h-[300px] overflow-y-auto">
+                        {allCurrencies.map((currency) => (
+                          <CommandItem
+                            key={currency.value}
+                            onSelect={() => {
+                              handleCurrencySelect(currency);
+                              setOpen(false);
+                            }}
+                            className="flex items-center"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedCurrency.value === currency.value 
+                                  ? "opacity-100" 
+                                  : "opacity-0"
+                              )}
+                            />
+                            <span className="flex-1">{currency.label}</span>
+                            <span className="text-gray-500 text-sm">
+                              {currency.symbol}
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
               {/* Customer Selection - Adjusted for mobile */}
               <div className="mb-4 md:mb-6">
                 <div className="flex justify-between items-center mb-4">
@@ -780,124 +976,9 @@ const InvoiceCreationPanel = ({
                 )}
               </div>
 
-              {/* Company Selection */}
-              <div className="mb-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-sm font-medium">Company Details</h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedCompany(null);
-                      setEditingCompany(false);
-                    }}
-                  >
-                    <Plus size={16} className="mr-2" />
-                    New Company
-                  </Button>
-                </div>
-
-                {selectedCompany ? (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">
-                          {
-                            companies.find((c) => c.id === selectedCompany)
-                              ?.name
-                          }
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {
-                            companies.find((c) => c.id === selectedCompany)
-                              ?.email
-                          }
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          className="text-sm text-blue-500"
-                          onClick={() => setEditingCompany(true)}
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          className="text-sm text-gray-500"
-                          onClick={() => setSelectedCompany(null)}
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {companies.length > 0 && !editingCompany && (
-                      <div className="space-y-2">
-                        {companies.map((company) => (
-                          <div
-                            key={company.id}
-                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                            onClick={() => {
-                              setSelectedCompany(company.id);
-                              updateFromData({
-                                name: company.name,
-                                email: company.email,
-                                address: company.address,
-                                phone: company.phone,
-                              });
-                              updateInvoiceData({ website: company.website });
-                            }}
-                          >
-                            <div>
-                              <p className="font-medium">{company.name}</p>
-                              <p className="text-sm text-gray-600">
-                                {company.email}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {(!companies.length || editingCompany) && (
-                      <div className="space-y-4">
-                        <Input
-                          placeholder="Company name"
-                          value={invoiceData.from.name}
-                          onChange={(e) =>
-                            updateFromData({ name: e.target.value })
-                          }
-                        />
-                        <Input
-                          placeholder="Company email"
-                          value={invoiceData.from.email}
-                          onChange={(e) =>
-                            updateFromData({ email: e.target.value })
-                          }
-                        />
-                        <Input
-                          placeholder="Company website"
-                          value={invoiceData.website}
-                          onChange={(e) =>
-                            updateInvoiceData({ website: e.target.value })
-                          }
-                        />
-                        {invoiceData.from.name && invoiceData.from.email && (
-                          <Button
-                            onClick={handleAddNewCompany}
-                            variant="outline"
-                            className="w-full"
-                          >
-                            Save Company Details
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
+              {/* Remove Company Details section and replace with simple input fields */}
+             
+              
               {/* Invoice Details - Adjusted for mobile */}
               <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
                 <div>

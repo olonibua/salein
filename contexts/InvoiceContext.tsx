@@ -41,10 +41,17 @@ export interface InvoiceData {
   total: number;
   paymentMemo: string;
   website: string;
+  currency: {
+    label: string;
+    value: string;
+    symbol: string;
+  };
 }
 
 interface InvoiceContextType {
   invoiceData: InvoiceData;
+  logo: string | null;
+  setLogo: (logo: string | null) => void;
   updateInvoiceData: (data: Partial<InvoiceData>) => void;
   updateFromData: (data: Partial<InvoiceData["from"]>) => void;
   updateToData: (data: Partial<InvoiceData["to"]>) => void;
@@ -53,43 +60,50 @@ interface InvoiceContextType {
 
 const InvoiceContext = createContext<InvoiceContextType | undefined>(undefined);
 
+const initialInvoiceData: InvoiceData = {
+  invoiceDate: "22/01/2025",
+  dueDate: "22/01/2025",
+  from: {
+    name: "",
+    email: "",
+    address: {
+      street: "",
+      city: "",
+      state: "",
+      postalCode: ""
+    },
+    phone: ""
+  },
+  to: {
+    name: "",
+    email: "",
+    address: {
+      street: "",
+      city: "",
+      state: "",
+      postalCode: ""
+    },
+    phone: ""
+  },
+  poNumber: "",
+  invoiceNumber: "Salein-934",
+  items: [],
+  subtotal: 0,
+  taxRate: 0.1,
+  taxAmount: 0,
+  total: 0,
+  paymentMemo: "",
+  website: "www.salein.com",
+  currency: {
+    label: "US Dollar (USD)",
+    value: "USD",
+    symbol: "USD"
+  }
+};
+
 export function InvoiceProvider({ children }: { children: React.ReactNode }) {
-  const [invoiceData, setInvoiceData] = useState<InvoiceData>({
-    invoiceDate: "22/01/2025",
-    dueDate: "22/01/2025",
-    from: {
-      name: "",
-      email: "",
-      address: {
-        street: "",
-        city: "",
-        state: "",
-        postalCode: "",
-      },
-      phone: "",
-      logo: "",
-    },
-    to: {
-      name: "",
-      email: "",
-      address: {
-        street: "",
-        city: "",
-        state: "",
-        postalCode: "",
-      },
-      phone: "",
-    },
-    poNumber: "",
-    invoiceNumber: "Salein-934",
-    items: [],
-    subtotal: 0,
-    taxRate: 0.1,
-    taxAmount: 0,
-    total: 0,
-    paymentMemo: "",
-    website: "www.salein.com",
-  });
+  const [invoiceData, setInvoiceData] = useState<InvoiceData>(initialInvoiceData);
+  const [logo, setLogo] = useState<string | null>(null);
 
   const updateInvoiceData = (data: Partial<InvoiceData>) => {
     setInvoiceData((prev) => ({ ...prev, ...data }));
@@ -127,6 +141,8 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     <InvoiceContext.Provider
       value={{
         invoiceData,
+        logo,
+        setLogo,
         updateInvoiceData,
         updateFromData,
         updateToData,

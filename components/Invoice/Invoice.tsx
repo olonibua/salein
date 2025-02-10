@@ -3,64 +3,48 @@ import React, { useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Minus, Plus } from "lucide-react";
 import { useInvoice } from "@/contexts/InvoiceContext";
+import { invoiceTemplates } from "./templates";
+import { cn } from "@/lib/utils";
 
-const Invoice = () => {
+interface InvoiceProps {
+  selectedTemplate?: string;
+}
+
+const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
   const [zoom, setZoom] = useState(100);
-  const { invoiceData } = useInvoice();
+  const { invoiceData, logo } = useInvoice();
 
-  //   const invoiceData = {
-  //     invoiceDate: "20/01/2025",
-  //     dueDate: "20/01/2025",
-  //     from: {
-  //       name: "olonts",
-  //       email: "olonts@gmail.com",
-  //     },
-  //     to: {
-  //       name: "olonts",
-  //       email: "olonts@gmail.com",
-  //     },
-  //     poNumber: "11",
-  //     invoiceNumber: "MON-715",
-  //     items: [
-  //       { name: "bag", quantity: 2, unitPrice: 1000.0, total: 2000.0 },
-  //       { name: "brush", quantity: 3, unitPrice: 4000.0, total: 12000.0 },
-  //     ],
-  //     subtotal: 14000.0,
-  //     taxRate: 0.1,
-  //     taxAmount: 1400.0,
-  //     total: 15400.0,
-  //     paymentMemo: "pay",
-  //     website: "www.salein.com",
-  //   };
+  // Add console log to verify prop received
+  console.log("Logo received in Invoice:", logo);
 
-  // useEffect(() => {
-  //   // Load html2pdf dynamically on client side
-  //   require("html2pdf.js");
-  // }, []);
+  // Get selected template configuration
+  const template = invoiceTemplates.find(t => t.id === selectedTemplate) || invoiceTemplates[0];
 
-  //   const handleDownload = () => {
-  //     const invoice = document.getElementById("invoice-content");
-  //     const opt = {
-  //       margin: 1,
-  //       filename: `invoice-${invoiceData.invoiceNumber}.pdf`,
-  //       image: { type: "jpeg", quality: 0.98 },
-  //       html2canvas: { scale: 2 },
-  //       jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
-  //     };
+  // Template-specific styles
+  const getTemplateStyles = () => {
+    switch (template.id) {
+      case "corporate-pro":
+        return {
+          headerClass: "bg-blue-50 p-8 rounded-lg",
+          titleClass: "text-blue-800 text-6xl font-serif",
+          tableClass: "border-collapse border border-blue-100",
+        };
+      case "creative-bold":
+        return {
+          headerClass: "bg-gradient-to-r from-indigo-500 to-purple-500 p-8 text-white rounded-t-lg",
+          titleClass: "text-white text-7xl font-bold",
+          tableClass: "divide-y divide-indigo-100",
+        };
+      default: // modern-minimal
+        return {
+          headerClass: "",
+          titleClass: "text-7xl font-bold text-gray-800",
+          tableClass: "divide-y divide-gray-100",
+        };
+    }
+  };
 
-  //     if (invoice) {
-  //       const originalTransform = invoice.style.transform;
-  //       invoice.style.transform = "scale(1)";
-
-  //       html2pdf()
-  //         .set(opt)
-  //         .from(invoice)
-  //         .save()
-  //         .then(() => {
-  //           invoice.style.transform = originalTransform;
-  //         });
-  //     }
-  //   };
+  const styles = getTemplateStyles();
 
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -116,43 +100,58 @@ const Invoice = () => {
           </div>
         </div>
 
-        {/* Invoice Content - A4 Format */}
+        {/* Invoice Content with Template Styles */}
         <div className="h-full">
           <div
             id="invoice-content"
-            className="w-[170mm] h-[207mm] bg-white shadow-sm"
+            className={cn(
+              "w-[170mm] h-[207mm] bg-white shadow-sm",
+              template.layout.fontFamily
+            )}
             style={{
               transform: `scale(${zoom / 100})`,
               transformOrigin: "top left",
               transition: "transform 0.2s ease-in-out",
               margin: "0 auto",
-              paddingTop: "12mm",
-              padding: "12mm", // Standard A4 margins
+              padding: "12mm",
               boxSizing: "border-box",
             }}
           >
             <div className="h-full">
-              {/* Header */}
-              <div className="flex justify-between mb-10">
-                <div>
-                  <h1 className="text-7xl font-bold text-gray-800">Invoice</h1>
-                  <div className="text-sm text-gray-600 mt-2">
-                    <p>Invoice date: {formatDate(invoiceData.invoiceDate)}</p>
-                    <p>Due date: {formatDate(invoiceData.dueDate)}</p>
+              {/* Header with Template Styles */}
+              <div className={cn(template.layout.headerStyle, styles.headerClass)}>
+                <div className="flex justify-between items-start w-full">
+                  <div className="flex-1">
+                    {logo ? (
+                      <div className="h-20 relative">
+                        <img 
+                          src={logo} 
+                          alt="Company Logo" 
+                          className="h-full w-auto object-contain"
+                          style={{ maxWidth: '200px' }}
+                        />
+                      </div>
+                    ) : (
+                      <h1 className={styles.titleClass}>INVOICE</h1>
+                    )}
                   </div>
-                </div>
-                <div className="text-right mt-2">
-                  <p className="text-sm text-gray-600">
-                    Invoice no: #{invoiceData.invoiceNumber}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    PO no: {invoiceData.poNumber}
-                  </p>
+                  
+                  <div className="flex-1 text-right">
+                    <div className="text-sm text-gray-600">
+                      <p>Invoice date: {formatDate(invoiceData.invoiceDate)}</p>
+                      <p>Due date: {formatDate(invoiceData.dueDate)}</p>
+                      <p>Invoice no: #{invoiceData.invoiceNumber}</p>
+                      <p>PO no: {invoiceData.poNumber}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Addresses */}
-              <div className="grid grid-cols-2 gap-8 mb-8 mt-5 pt-5 border-t border-gray-100">
+              {/* Addresses with Template Styles */}
+              <div className={cn(
+                "grid grid-cols-2 gap-8 mb-8",
+                template.id === "creative-bold" && "bg-gray-50 p-6 rounded-lg"
+              )}>
                 <div>
                   <h2 className="text-sm font-semibold text-gray-600 mb-2">
                     From:
@@ -201,21 +200,24 @@ const Invoice = () => {
                 </div>
               </div>
 
-              {/* Items Table */}
-              <div className="mb-8 mt-2">
-                <table className="w-full">
+              {/* Items Table with Template Styles */}
+              <div className="mb-8">
+                <table className={cn(
+                  "w-full table-fixed",
+                  template.layout.tableStyle
+                )}>
                   <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left py-2 text-sm font-semibold text-gray-600">
+                    <tr className="text-left">
+                      <th className="w-[40%] py-2 text-sm font-semibold text-gray-600">
                         Item
                       </th>
-                      <th className="text-right py-2 text-sm font-semibold text-gray-600">
+                      <th className="w-[15%] py-2 text-sm font-semibold text-gray-600 text-right">
                         Quantity
                       </th>
-                      <th className="text-right py-2 text-sm font-semibold text-gray-600">
+                      <th className="w-[20%] py-2 text-sm font-semibold text-gray-600 text-right">
                         Unit Price
                       </th>
-                      <th className="text-right py-2 text-sm font-semibold text-gray-600">
+                      <th className="w-[25%] py-2 text-sm font-semibold text-gray-600 text-right">
                         Total
                       </th>
                     </tr>
@@ -223,7 +225,9 @@ const Invoice = () => {
                   <tbody>
                     {invoiceData.items.map((item, index) => (
                       <tr key={index} className="border-b border-gray-100">
-                        <td className="py-2 text-sm">{item.name}</td>
+                        <td className="py-2 text-sm truncate pr-4">
+                          {item.name}
+                        </td>
                         <td className="py-2 text-sm text-right">
                           {item.quantity}
                         </td>
@@ -239,8 +243,11 @@ const Invoice = () => {
                 </table>
               </div>
 
-              {/* Summary */}
-              <div className="border-t border-gray-100 pt-4 mt-1">
+              {/* Summary with Template Styles */}
+              <div className={cn(
+                "pt-4",
+                template.id === "corporate-pro" && "bg-blue-50 p-4 rounded-lg"
+              )}>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-gray-600">Subtotal</span>
                   <span className="text-sm">
@@ -261,8 +268,8 @@ const Invoice = () => {
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className=" border-t border-gray-100 pt-16">
+              {/* Footer with Template Styles */}
+              <div className={template.layout.footerStyle}>
                 <p className="text-sm text-gray-600 mb-1">
                   Payment Memo: {invoiceData.paymentMemo}
                 </p>
