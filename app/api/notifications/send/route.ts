@@ -1,6 +1,36 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
+interface EmailData {
+  from: string;
+  to: string[];
+  cc?: string[];
+  subject: string;
+  html: string;
+  attachments: Array<{
+    filename: string;
+    content: Buffer;
+  }>;
+}
+
+interface RequestBody {
+  to: string;
+  subject: string;
+  htmlContent: string;
+  pdfBuffer: number[];
+  teamEmails?: string[];
+  fileName?: string;
+}
+
+interface ResendResponse {
+  data?: {
+    id: string;
+  };
+  error?: {
+    message: string;
+  };
+}
+
 export async function POST(req: Request) {
   const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -21,7 +51,7 @@ export async function POST(req: Request) {
       pdfBuffer,
       teamEmails = [],
       fileName = `invoice-${Date.now()}.pdf`,
-    } = await req.json();
+    }: RequestBody = await req.json();
 
     // Validate email
     if (!to || !to.trim()) {
@@ -34,9 +64,7 @@ export async function POST(req: Request) {
     console.log("Sending email to:", to);
     console.log("Attachment size:", pdfBuffer.length);
 
-    const emailData = {
-      // from: "Salein <invoices@olonts.site>",
-
+    const emailData: EmailData = {
       from: "Salein <onboarding@resend.dev>",
       to: [to],
       cc: teamEmails,
@@ -53,7 +81,7 @@ export async function POST(req: Request) {
     console.log("Email data:", { ...emailData, attachments: 'PDF Buffer' });
 
     try {
-      const data = await resend.emails.send(emailData);
+      const data: ResendResponse = await resend.emails.send(emailData);
       console.log("Resend API Response:", data);
 
       if (data?.error) {
@@ -64,16 +92,18 @@ export async function POST(req: Request) {
         success: true, 
         id: data?.data?.id || 'sent' 
       });
-    } catch (resendError: any) {
-      console.error("Resend API Error:", resendError);
-      throw new Error(resendError?.message || "Failed to send via Resend API");
+    } catch (resendError: unknown) {
+      const error = resendError as Error;
+      console.error("Resend API Error:", error);
+      throw new Error(error?.message || "Failed to send via Resend API");
     }
-  } catch (error: any) {
-    console.error("Detailed error:", error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Detailed error:", err);
     return NextResponse.json(
       { 
         error: "Failed to send email", 
-        details: error?.message || "Unknown error occurred"
+        details: err?.message || "Unknown error occurred"
       },
       { status: 500 }
     );

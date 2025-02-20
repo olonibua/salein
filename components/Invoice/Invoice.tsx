@@ -10,8 +10,14 @@ interface InvoiceProps {
   selectedTemplate?: string;
 }
 
+interface TemplateStyles {
+  headerClass: string;
+  titleClass: string;
+  tableClass: string;
+}
+
 const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
-  const [zoom, setZoom] = useState(100);
+  const [zoom, setZoom] = useState<number>(100);
   const { invoiceData, logo } = useInvoice();
 
   console.log("Invoice data:", invoiceData);
@@ -23,7 +29,7 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
   const template = invoiceTemplates.find(t => t.id === selectedTemplate) || invoiceTemplates[0];
 
   // Template-specific styles
-  const getTemplateStyles = () => {
+  const getTemplateStyles = (): TemplateStyles => {
     switch (template.id) {
       case "corporate-pro":
         return {
@@ -49,7 +55,7 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
   const styles = getTemplateStyles();
 
   // Format date for display
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string): string => {
     if (!dateString || dateString === "Invalid Date") return "";
     try {
       const date = new Date(dateString);

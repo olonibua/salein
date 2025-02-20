@@ -9,12 +9,38 @@ import { addDays, addWeeks, addMonths } from 'date-fns';
 interface InvoiceSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSendInvoice: (recipientEmail: string, teamEmails: string[], uploadedInvoiceDetails?: any) => Promise<void>;
+  onSendInvoice: (
+    recipientEmail: string, 
+    teamEmails: string[], 
+    uploadedInvoiceDetails?: UploadedInvoiceDetails
+  ) => Promise<void>;
   recipientEmail: string;
-  invoiceDate?: string;  // Make optional
-  dueDate?: string;      // Make optional
-  amount?: number;       // Make optional
-  isUploadedInvoice?: boolean; // New prop to check if invoice was uploaded
+  invoiceDate?: string;
+  dueDate?: string;
+  amount?: number;
+  isUploadedInvoice?: boolean;
+}
+
+interface UploadedInvoiceDetails {
+  invoiceDate: string;
+  dueDate: string;
+  amount: number;
+  invoiceName: string;
+}
+
+interface InvoiceSettings {
+  recipientEmail: string;
+  teamEmails: string[];
+  reminderEnabled: boolean;
+  reminderInterval: "daily" | "weekly" | "biweekly" | "monthly";
+  reminderCount: number;
+  reminderTime: string; // 24-hour format HH:mm
+  uploadedInvoiceDetails: {
+    invoiceDate: string;
+    dueDate: string;
+    amount: number;
+    invoiceName: string;
+  };
 }
 
 interface InvoiceRecord {
@@ -31,11 +57,13 @@ interface InvoiceRecord {
   dueDate: string;
 }
 
-interface ReminderSettings {
-  enabled: boolean;
-  interval: "daily" | "weekly" | "biweekly" | "monthly";
-  count: number;
-  time: string; // 24-hour format HH:mm
+interface ReminderRecord {
+  invoiceId: string;
+  recipientEmail: string;
+  dueDate: string;
+  amount: number;
+  sendDate: string;
+  status: 'pending' | 'sent' | 'failed';
 }
 
 const InvoiceSettingsModal = ({
@@ -49,14 +77,13 @@ const InvoiceSettingsModal = ({
   isUploadedInvoice = false
 }: InvoiceSettingsModalProps) => {
   console.log('isUploadedInvoice:', isUploadedInvoice);
-  const [settings, setSettings] = useState({
-    recipientEmail: recipientEmail,
-    teamEmails: [] as string[],
+  const [settings, setSettings] = useState<InvoiceSettings>({
+    recipientEmail,
+    teamEmails: [],
     reminderEnabled: false,
-    reminderInterval: "weekly" as "daily" | "weekly" | "biweekly" | "monthly",
+    reminderInterval: "weekly",
     reminderCount: 3,
     reminderTime: "09:00",
-    // New fields for uploaded invoices
     uploadedInvoiceDetails: {
       invoiceDate: invoiceDate || new Date().toISOString().split('T')[0],
       dueDate: dueDate || addDays(new Date(), 30).toISOString().split('T')[0],

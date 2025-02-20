@@ -4,13 +4,15 @@ import { Switch } from "@/components/ui/switch";
 interface AddressFieldsProps {
   showAddress: boolean;
   onShowAddressChange: (show: boolean) => void;
-  values: {
-    street?: string;
-    city?: string;
-    state?: string;
-    postalCode?: string;
-  };
+  values: AddressValues;
   onChange: (field: string, value: string) => void;
+}
+
+interface AddressValues {
+  street?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
 }
 
 export function AddressFields({
@@ -19,7 +21,7 @@ export function AddressFields({
   values,
   onChange,
 }: AddressFieldsProps) {
-  const handleAddressChange = (field: string, value: string) => {
+  const handleAddressChange = (field: keyof AddressValues, value: string) => {
     onChange(`address.${field}`, value);
   };
 

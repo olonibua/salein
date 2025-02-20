@@ -6,12 +6,7 @@ export async function POST(req: Request) {
     const data = await req.json();
 
     // Log the incoming data and environment variables
-    console.log("Received data:", data);
-    console.log("DB ID:", process.env.NEXT_PUBLIC_APPWRITE_INVOICESDB_ID);
-    console.log(
-      "Collection ID:",
-      process.env.NEXT_PUBLIC_APPWRITE_INVOICESCOLLECTION_ID
-    );
+   
 
     if (
       !process.env.NEXT_PUBLIC_APPWRITE_INVOICESDB_ID ||

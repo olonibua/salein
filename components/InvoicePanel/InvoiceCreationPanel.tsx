@@ -32,10 +32,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { allCurrencies } from "@/types/currency";
 import { addDays } from "date-fns";
 
+interface InvoiceCreationPanelProps {
+  onUpload: () => void;
+  onCreateInvoice: () => void;
+}
+
 interface Customer {
   id: string;
   name: string;
-  email: string;  
+  email: string;
   address?: {
     street?: string;
     city?: string;
@@ -59,9 +64,14 @@ interface CompanyDetails {
   website?: string;
 }
 
-interface InvoiceCreationPanelProps {
-  onUpload: () => void;
-  onCreateInvoice: () => void;
+interface SavedPersonalDetails extends CompanyDetails {}
+
+interface ItemUpdate {
+  name?: string;
+  quantity?: number;
+  unitPrice?: string | number;
+  total?: number;
+  currency?: { label: string; value: string; symbol: string };
 }
 
 const InvoiceCreationPanel = ({
@@ -76,14 +86,14 @@ const InvoiceCreationPanel = ({
     updateItems,
     setLogo,
   } = useInvoice();
-  const [activeTab, setActiveTab] = useState("information");
-  const [accountType, setAccountType] = useState("personal");
+
+  // State with proper typing
+  const [activeTab, setActiveTab] = useState<"information" | "templates" | "new">("information");
+  const [accountType, setAccountType] = useState<"personal" | "business">("personal");
   const [showAddress, setShowAddress] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
   const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
-  // const items = invoiceData.items;
   const [customers, setCustomers] = useState<Customer[]>(() => {
-    // Load customers from localStorage on initial render
     const saved = localStorage.getItem("customers");
     return saved ? JSON.parse(saved) : [];
   });
@@ -91,14 +101,13 @@ const InvoiceCreationPanel = ({
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<string | null>(null);
   const [showRecipientAddress, setShowRecipientAddress] = useState(false);
-  // const router = useRouter();
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [companies, setCompanies] = useState<CompanyDetails[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [editingCompany, setEditingCompany] = useState<boolean>(false);
+  const [editingCompany, setEditingCompany] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [savedPersonalDetails, setSavedPersonalDetails] = useState<any[]>(() => {
+  const [savedPersonalDetails, setSavedPersonalDetails] = useState<SavedPersonalDetails[]>(() => {
     const saved = localStorage.getItem('personalDetails');
     return saved ? JSON.parse(saved) : [];
   });
@@ -106,8 +115,94 @@ const InvoiceCreationPanel = ({
   const [hasStartedFilling, setHasStartedFilling] = useState(false);
   const [isUploadedInvoice, setIsUploadedInvoice] = useState(false);
 
-  
-  
+  // Type-safe handlers
+  const handleFromDataChange = (field: string, value: string) => {
+    if (!hasStartedFilling) {
+      setHasStartedFilling(true);
+      toast.info(
+        <div className="flex flex-col gap-1">
+          <span className="font-medium">Privacy First! 🔒</span>
+          <span className="text-sm text-gray-600">
+            All information is stored locally on your device
+          </span>
+        </div>,
+        {
+          duration: 4000,
+          className: "bg-gradient-to-r from-blue-50 to-indigo-50",
+          position: "bottom-right",
+        }
+      );
+    }
+
+    if (field.startsWith('address.')) {
+      const addressField = field.split('.')[1];
+      updateFromData({
+        address: {
+          ...invoiceData.from.address,
+          [addressField]: value
+        }
+      });
+    } else {
+      updateFromData({ [field]: value });
+    }
+  };
+
+  const handleItemUpdate = (
+    index: number,
+    field: keyof ItemUpdate,
+    value: string | number | { label: string; value: string; symbol: string }
+  ) => {
+    const updatedItems = [...invoiceData.items];
+    
+    if (field === "currency") {
+      if (index === 0) {
+        const selectedCurrency = allCurrencies.find(c => c.value === value);
+        if (selectedCurrency) {
+          updatedItems.forEach(item => {
+            item.currency = selectedCurrency;
+          });
+          updateInvoiceData({ currency: selectedCurrency });
+        }
+      } else {
+        toast.info("Currency can only be changed on the first item", {
+          duration: 3000,
+        });
+        return;
+      }
+    } else {
+      const numValue = 
+        field === "quantity" || field === "unitPrice"
+          ? value === ""
+            ? ""
+            : Number(value)
+          : value;
+
+      updatedItems[index] = {
+        ...updatedItems[index],
+        [field]: numValue,
+      };
+    }
+
+    if (field === "quantity" || field === "unitPrice") {
+      updatedItems[index].total =
+        (updatedItems[index].quantity || 0) *
+        (Number(updatedItems[index].unitPrice) || 0);
+    }
+
+    const subtotal = updatedItems.reduce(
+      (sum, item) => sum + (item.total || 0),
+      0
+    );
+    const taxAmount = subtotal * (invoiceData.taxRate || 0);
+    const total = subtotal + taxAmount;
+
+    updateItems(updatedItems);
+    updateInvoiceData({
+      subtotal,
+      taxAmount,
+      total,
+    });
+  };
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -156,37 +251,6 @@ const InvoiceCreationPanel = ({
     }
   }, [invoiceData.invoiceDate, updateInvoiceData]);
 
-  const handleFromDataChange = (field: string, value: string) => {
-    if (!hasStartedFilling) {
-      setHasStartedFilling(true);
-      toast.info(
-        <div className="flex flex-col gap-1">
-          <span className="font-medium">Privacy First! 🔒</span>
-          <span className="text-sm text-gray-600">
-            All information is stored locally on your device
-          </span>
-        </div>,
-        {
-          duration: 4000,
-          className: "bg-gradient-to-r from-blue-50 to-indigo-50",
-          position: "bottom-right",
-        }
-      );
-    }
-
-    if (field.startsWith('address.')) {
-      const addressField = field.split('.')[1];
-      updateFromData({
-        address: {
-          ...invoiceData.from.address,
-          [addressField]: value
-        }
-      });
-    } else {
-      updateFromData({ [field]: value });
-    }
-  };
-
   // Handle new item addition
   const handleAddItem = () => {
     const newItem = {
@@ -197,69 +261,6 @@ const InvoiceCreationPanel = ({
       currency: invoiceData.currency
     };
     updateItems([...invoiceData.items, newItem]);
-  };
-
-  // Handle item updates
-  const handleItemUpdate = (
-    index: number,
-    field: string,
-    value: string | number | { label: string; value: string; symbol: string }
-  ) => {
-    const updatedItems = [...invoiceData.items];
-    
-    if (field === "currency") {
-      // Only allow currency change if it's the first item
-      if (index === 0) {
-        const selectedCurrency = allCurrencies.find(c => c.value === value);
-        if (selectedCurrency) {
-          // Update all items to use the same currency
-          updatedItems.forEach(item => {
-            item.currency = selectedCurrency;
-          });
-          // Update invoice currency
-          updateInvoiceData({ currency: selectedCurrency });
-        }
-      } else {
-        // Show toast indicating currency can only be changed on first item
-        toast.info("Currency can only be changed on the first item", {
-          duration: 3000,
-        });
-        return;
-      }
-    } else {
-      const numValue = 
-        field === "quantity" || field === "unitPrice"
-          ? value === ""
-            ? ""
-            : Number(value)
-          : value;
-
-      updatedItems[index] = {
-        ...updatedItems[index],
-        [field]: numValue,
-      };
-    }
-
-    // Rest of the calculation logic remains the same
-    if (field === "quantity" || field === "unitPrice") {
-      updatedItems[index].total =
-        (updatedItems[index].quantity || 0) *
-        (Number(updatedItems[index].unitPrice) || 0);
-    }
-
-    const subtotal = updatedItems.reduce(
-      (sum, item) => sum + (item.total || 0),
-      0
-    );
-    const taxAmount = subtotal * (invoiceData.taxRate || 0);
-    const total = subtotal + taxAmount;
-
-    updateItems(updatedItems);
-    updateInvoiceData({
-      subtotal,
-      taxAmount,
-      total,
-    });
   };
 
   // Handle item removal
@@ -392,28 +393,6 @@ const InvoiceCreationPanel = ({
       toast.success("Company details saved successfully");
     }
   };
-
-  // const handleSaveEditedCompany = () => {
-  //   if (selectedCompany && invoiceData.from.name && invoiceData.from.email) {
-  //     const updatedCompanies = companies.map((company) =>
-  //       company.id === selectedCompany
-  //         ? {
-  //             ...company,
-  //             name: invoiceData.from.name,
-  //             email: invoiceData.from.email,
-  //             address: invoiceData.from.address,
-  //             phone: invoiceData.from.phone,
-  //             website: invoiceData.website,
-  //           }
-  //         : company
-  //     );
-
-  //     setCompanies(updatedCompanies);
-  //     localStorage.setItem("companies", JSON.stringify(updatedCompanies));
-  //     setEditingCompany(false);
-  //     toast.success("Company details updated successfully");
-  //   }
-  // };
 
   const handleNextToTemplates = () => {
     setActiveTab("templates");

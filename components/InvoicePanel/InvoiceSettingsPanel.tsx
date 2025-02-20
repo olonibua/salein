@@ -23,6 +23,7 @@ interface InvoiceSettingsPanelProps {
 
 type InvoiceMode = "create" | "upload" | null;
 type ViewMode = "list" | "create" | "upload";
+type ReminderInterval = "daily" | "weekly" | "biweekly" | "monthly";
 
 interface InvoiceRecord {
   id: string;
@@ -32,28 +33,21 @@ interface InvoiceRecord {
   amount: number;
   teamEmails: string[];
   reminderEnabled: boolean;
-  reminderInterval: "daily" | "weekly" | "biweekly" | "monthly";
+  reminderInterval: ReminderInterval;
   reminderCount: number;
   invoiceDate: string;
   dueDate: string;
 }
 
-type ReminderInterval = "daily" | "weekly" | "biweekly" | "monthly";
-
 const InvoiceSettingsPanel = ({ onBack }: InvoiceSettingsPanelProps) => {
-  // State for view management
+  // State with proper typing
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [invoiceMode, setInvoiceMode] = useState<InvoiceMode>(null);
-  
-  // State for invoice records
   const [invoiceRecords, setInvoiceRecords] = useState<InvoiceRecord[]>([]);
-  console.log(invoiceRecords)
   const [loading, setLoading] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-
-  // Add state for countdown
   const [countdowns, setCountdowns] = useState<{ [key: string]: string }>({});
 
   const router = useRouter();

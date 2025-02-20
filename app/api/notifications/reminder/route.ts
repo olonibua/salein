@@ -1,6 +1,30 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
+interface ReminderRequestBody {
+  to: string;
+  subject: string;
+  invoiceId: string;
+  dueDate: string;
+  amount: number;
+}
+
+interface EmailData {
+  from: string;
+  to: string[];
+  subject: string;
+  html: string;
+}
+
+interface ResendResponse {
+  data?: {
+    id: string;
+  };
+  error?: {
+    message: string;
+  };
+}
+
 export async function POST(req: Request) {
   const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -20,9 +44,9 @@ export async function POST(req: Request) {
       invoiceId,
       dueDate,
       amount,
-    } = await req.json();
+    }: ReminderRequestBody = await req.json();
 
-    const emailData = {
+    const emailData: EmailData = {
       from: "Salein <invoices@olonts.site>",
       to: [to],
       subject: `Payment Reminder: Invoice ${invoiceId} Due Soon`,
@@ -48,13 +72,14 @@ export async function POST(req: Request) {
       `,
     };
 
-    const data = await resend.emails.send(emailData);
+    const data: ResendResponse = await resend.emails.send(emailData);
     return NextResponse.json({ success: true, id: data.data?.id });
-  } catch (error: any) {
-    console.error("Reminder email error:", error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Reminder email error:", err);
     return NextResponse.json(
-      { error: "Failed to send reminder", details: error.message },
+      { error: "Failed to send reminder", details: err.message },
       { status: 500 }
     );
   }
-} 
+}

@@ -4,29 +4,35 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { InvoiceProvider } from "@/contexts/InvoiceContext";
 
-const Invoice = dynamic(() => import("@/components/Invoice/Invoice"), {
-  ssr: false,
-});
+// Dynamic imports with proper typing
+const Invoice = dynamic<{}>(
+  () => import("@/components/Invoice/Invoice"),
+  { ssr: false }
+);
 
-const InvoiceCreationPanel = dynamic(
+const InvoiceCreationPanel = dynamic<{}>(
   () => import("@/components/InvoicePanel/InvoiceCreationPanel"),
   { ssr: false }
 );
 
-const InvoiceSettingsPanel = dynamic(
+const InvoiceSettingsPanel = dynamic<{}>(
   () => import("@/components/InvoicePanel/InvoiceSettingsPanel"),
   { ssr: false }
 );
 
-const UploadInvoiceModal = dynamic(
+const UploadInvoiceModal = dynamic<{
+  isOpen: boolean;
+  onClose: () => void;
+  onUpload: () => void;
+}>(
   () => import("@/components/Invoice/UploadInvoiceModal"),
   { ssr: false }
 );
 
 export default function Home() {
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
 
-  const handleInvoiceUploaded = () => {
+  const handleInvoiceUploaded = (): void => {
     setShowUploadModal(false);
   };
 
