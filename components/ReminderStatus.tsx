@@ -5,16 +5,32 @@ interface ReminderStatusProps {
   invoiceId: string;
 }
 
+type ReminderStatus = 'sent' | 'failed' | 'pending';
+
+interface Reminder {
+  invoiceId: string;
+  status: ReminderStatus;
+  sendDate: string;
+  recipientEmail: string;
+  dueDate: string;
+  amount: number;
+}
+
 export const ReminderStatus = ({ invoiceId }: ReminderStatusProps) => {
-  const [reminders, setReminders] = useState<any[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
 
   useEffect(() => {
     const loadReminders = () => {
-      const allReminders = JSON.parse(localStorage.getItem('reminders') || '[]');
-      const invoiceReminders = allReminders.filter(
-        (reminder: any) => reminder.invoiceId === invoiceId
-      );
-      setReminders(invoiceReminders);
+      try {
+        const allReminders = JSON.parse(localStorage.getItem('reminders') || '[]');
+        const invoiceReminders = allReminders.filter(
+          (reminder: Reminder) => reminder.invoiceId === invoiceId
+        );
+        setReminders(invoiceReminders);
+      } catch (error) {
+        console.error('Error loading reminders:', error);
+        setReminders([]);
+      }
     };
 
     loadReminders();
@@ -26,7 +42,7 @@ export const ReminderStatus = ({ invoiceId }: ReminderStatusProps) => {
   return (
     <div className="flex flex-col gap-2">
       {reminders.map((reminder, index) => (
-        <div key={index} className="flex items-center gap-2">
+        <div key={`${reminder.invoiceId}-${index}`} className="flex items-center gap-2">
           <Badge
             variant={
               reminder.status === 'sent'

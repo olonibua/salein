@@ -1,10 +1,17 @@
+"use client";
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { addDays, addWeeks, addMonths } from 'date-fns';
+
+// Types
+type ReminderInterval = "daily" | "weekly" | "biweekly" | "monthly";
+type InvoiceStatus = "sent" | "pending" | "failed";
+type ReminderStatus = 'pending' | 'sent' | 'failed';
 
 interface InvoiceSettingsModalProps {
   isOpen: boolean;
@@ -32,26 +39,21 @@ interface InvoiceSettings {
   recipientEmail: string;
   teamEmails: string[];
   reminderEnabled: boolean;
-  reminderInterval: "daily" | "weekly" | "biweekly" | "monthly";
+  reminderInterval: ReminderInterval;
   reminderCount: number;
-  reminderTime: string; // 24-hour format HH:mm
-  uploadedInvoiceDetails: {
-    invoiceDate: string;
-    dueDate: string;
-    amount: number;
-    invoiceName: string;
-  };
+  reminderTime: string;
+  uploadedInvoiceDetails: UploadedInvoiceDetails;
 }
 
 interface InvoiceRecord {
   id: string;
   recipientEmail: string;
-  status: "sent" | "pending" | "failed";
+  status: InvoiceStatus;
   createdAt: string;
   amount: number;
   teamEmails: string[];
   reminderEnabled: boolean;
-  reminderInterval: "daily" | "weekly" | "biweekly" | "monthly";
+  reminderInterval: ReminderInterval;
   reminderCount: number;
   invoiceDate: string;
   dueDate: string;
@@ -63,7 +65,7 @@ interface ReminderRecord {
   dueDate: string;
   amount: number;
   sendDate: string;
-  status: 'pending' | 'sent' | 'failed';
+  status: ReminderStatus;
 }
 
 const InvoiceSettingsModal = ({
@@ -76,7 +78,6 @@ const InvoiceSettingsModal = ({
   amount,
   isUploadedInvoice = false
 }: InvoiceSettingsModalProps) => {
-  console.log('isUploadedInvoice:', isUploadedInvoice);
   const [settings, setSettings] = useState<InvoiceSettings>({
     recipientEmail,
     teamEmails: [],
@@ -92,66 +93,54 @@ const InvoiceSettingsModal = ({
     }
   });
 
-  // console.log(settings);
   const [loading, setLoading] = useState(false);
 
+  // Helper functions
   const saveInvoiceToStorage = (invoiceData: InvoiceRecord) => {
     try {
       const existingInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-
-      const updatedInvoices = [invoiceData, ...existingInvoices].slice(0, 50); // Keep last 50 invoices
+      const updatedInvoices = [invoiceData, ...existingInvoices].slice(0, 50);
       localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
     } catch (error) {
       console.error('Error saving to localStorage:', error);
     }
   };
-  
 
   const scheduleReminders = async (invoiceRecord: InvoiceRecord) => {
     if (!settings.reminderEnabled) return;
 
-    const calculateNextReminderDate = (interval: string, index: number) => {
+    const calculateNextReminderDate = (interval: ReminderInterval, index: number): Date => {
       const dueDate = new Date(invoiceRecord.dueDate);
       switch (interval) {
-        case 'daily':
-          return addDays(dueDate, -index);
-        case 'weekly':
-          return addWeeks(dueDate, -index);
-        case 'biweekly':
-          return addWeeks(dueDate, -(index * 2));
-        case 'monthly':
-          return addMonths(dueDate, -index);
-        default:
-          return dueDate;
+        case 'daily': return addDays(dueDate, -index);
+        case 'weekly': return addWeeks(dueDate, -index);
+        case 'biweekly': return addWeeks(dueDate, -(index * 2));
+        case 'monthly': return addMonths(dueDate, -index);
+        default: return dueDate;
       }
     };
 
     try {
-      // Schedule reminders
+      const reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
       for (let i = 1; i <= settings.reminderCount; i++) {
         const reminderDate = calculateNextReminderDate(settings.reminderInterval, i);
-        
-        // Store reminder in localStorage
-        const reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
         reminders.push({
           invoiceId: invoiceRecord.id,
           recipientEmail: invoiceRecord.recipientEmail,
           dueDate: invoiceRecord.dueDate,
           amount: amount,
           sendDate: reminderDate.toISOString(),
-          status: 'pending'
+          status: 'pending' as ReminderStatus
         });
-        localStorage.setItem('reminders', JSON.stringify(reminders));
       }
+      localStorage.setItem('reminders', JSON.stringify(reminders));
     } catch (error) {
       console.error('Error scheduling reminders:', error);
     }
   };
 
+  // Event handlers
   const handleSave = async () => {
-    console.log('Settings before save:', settings); // Debug log
-    console.log('Is uploaded invoice:', isUploadedInvoice); // Debug log
-    
     setLoading(true);
     try {
       if (!settings.recipientEmail) {
@@ -159,14 +148,7 @@ const InvoiceSettingsModal = ({
         return;
       }
 
-      const uploadedDetails = isUploadedInvoice ? {
-        invoiceDate: settings.uploadedInvoiceDetails.invoiceDate,
-        dueDate: settings.uploadedInvoiceDetails.dueDate,
-        amount: settings.uploadedInvoiceDetails.amount,
-        invoiceName: settings.uploadedInvoiceDetails.invoiceName
-      } : null;
-
-      console.log('Uploaded details being passed:', uploadedDetails); // Debug log
+      const uploadedDetails = isUploadedInvoice ? settings.uploadedInvoiceDetails : null;
 
       await onSendInvoice(
         settings.recipientEmail, 
@@ -174,7 +156,6 @@ const InvoiceSettingsModal = ({
         uploadedDetails
       );
       
-      // Create invoice record with the correct date format
       const invoiceRecord: InvoiceRecord = {
         id: `INV-${Date.now()}`,
         recipientEmail: settings.recipientEmail,
@@ -185,19 +166,11 @@ const InvoiceSettingsModal = ({
         reminderEnabled: settings.reminderEnabled,
         reminderInterval: settings.reminderInterval,
         reminderCount: settings.reminderCount,
-        // Use the dates as they are, without converting to ISO string
         invoiceDate: settings.uploadedInvoiceDetails.invoiceDate,
         dueDate: settings.uploadedInvoiceDetails.dueDate
       };
 
-      // console.log('Saving invoice record with dates:', { 
-      //   invoiceDate: invoiceRecord.invoiceDate, 
-      //   dueDate: invoiceRecord.dueDate,
-      //   originalDates: { invoiceDate, dueDate }
-      // });
-
       saveInvoiceToStorage(invoiceRecord);
-      
       await scheduleReminders(invoiceRecord);
       
       onClose();
@@ -211,11 +184,7 @@ const InvoiceSettingsModal = ({
   };
 
   const handleReminderTimeChange = (time: string) => {
-    setSettings((prev) => ({
-      ...prev,
-      reminderTime: time,
-    }));
-
+    setSettings(prev => ({ ...prev, reminderTime: time }));
     toast.success(
       <div className="flex flex-col gap-1">
         <span className="font-medium">Reminder Time Set! ⏰</span>
@@ -227,9 +196,6 @@ const InvoiceSettingsModal = ({
         duration: 4000,
         className: "bg-gradient-to-r from-blue-50 to-indigo-50",
         position: "bottom-right",
-        style: {
-          animation: "slide-up 0.4s ease-out",
-        },
       }
     );
   };

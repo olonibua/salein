@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
-
 import { ArrowLeft, Plus, Upload, FileText, Clock, Trash2 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import { cn } from "@/lib/utils";
