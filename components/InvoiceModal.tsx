@@ -8,6 +8,7 @@ import Invoice from "./Invoice/Invoice";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import InvoiceSettingsModal from "./InvoiceSettingsModal";
+import { QRCodeSVG } from "qrcode.react";
 
 interface InvoiceModalProps {
   isOpen: boolean;
@@ -41,12 +42,19 @@ const InvoiceModal = ({
   const [isUploadMode, setIsUploadMode] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  const handleCopyLink = () => {
-    // Implement copy link functionality
+  const handleCopyLink = async () => {
+    try {
+      const invoiceLink = `${window.location.origin}/invoice/${invoiceData.invoiceNumber}`;
+      await navigator.clipboard.writeText(invoiceLink);
+      toast.success("Invoice link copied to clipboard");
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+      toast.error("Failed to copy link to clipboard");
+    }
   };
 
   const handleGetQRCode = () => {
-    // Implement QR code generation
+    setShowQR(!showQR);
   };
 
   const handleDownloadPDF = () => {
