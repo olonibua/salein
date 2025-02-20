@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState } from "react";
+import { addDays } from 'date-fns';
 
 export interface InvoiceData {
   invoiceDate: string;
@@ -34,6 +35,11 @@ export interface InvoiceData {
     quantity: number;
     unitPrice: string | number;
     total: number;
+    currency?: {
+      label: string;
+      value: string;
+      symbol: string;
+    };
   }>;
   subtotal: number;
   taxRate: number;
@@ -61,8 +67,8 @@ interface InvoiceContextType {
 const InvoiceContext = createContext<InvoiceContextType | undefined>(undefined);
 
 const initialInvoiceData: InvoiceData = {
-  invoiceDate: "22/01/2025",
-  dueDate: "22/01/2025",
+  invoiceDate: "",
+  dueDate: "",
   from: {
     name: "",
     email: "",
@@ -97,7 +103,7 @@ const initialInvoiceData: InvoiceData = {
   currency: {
     label: "US Dollar (USD)",
     value: "USD",
-    symbol: "USD"
+    symbol: "$"
   }
 };
 

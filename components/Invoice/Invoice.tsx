@@ -14,6 +14,8 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
   const [zoom, setZoom] = useState(100);
   const { invoiceData, logo } = useInvoice();
 
+  console.log("Invoice data:", invoiceData);
+
   // Add console log to verify prop received
   console.log("Logo received in Invoice:", logo);
 
@@ -48,13 +50,18 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
 
   // Format date for display
   const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    if (!dateString || dateString === "Invalid Date") return "";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "";
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    } catch {
+      return "";
+    }
   };
 
   return (
@@ -138,8 +145,8 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
                   
                   <div className="flex-1 text-right">
                     <div className="text-sm text-gray-600">
-                      <p>Invoice date: {formatDate(invoiceData.invoiceDate)}</p>
-                      <p>Due date: {formatDate(invoiceData.dueDate)}</p>
+                      <p>Invoice date: {formatDate(invoiceData.invoiceDate) || "Not set"}</p>
+                      <p>Due date: {formatDate(invoiceData.dueDate) || "Not set"}</p>
                       <p>Invoice no: #{invoiceData.invoiceNumber}</p>
                       <p>PO no: {invoiceData.poNumber}</p>
                     </div>
@@ -232,10 +239,10 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
                           {item.quantity}
                         </td>
                         <td className="py-2 text-sm text-right">
-                          £{Number(item.unitPrice).toFixed(2)}
+                          {item.currency?.symbol || invoiceData.currency.symbol}{Number(item.unitPrice).toFixed(2)}
                         </td>
                         <td className="py-2 text-sm text-right">
-                          £{Number(item.total).toFixed(2)}
+                          {item.currency?.symbol || invoiceData.currency.symbol}{Number(item.total).toFixed(2)}
                         </td>
                       </tr>
                     ))}
@@ -251,7 +258,7 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-gray-600">Subtotal</span>
                   <span className="text-sm">
-                    £{invoiceData.subtotal.toFixed(2)}
+                    {invoiceData.currency.symbol}{invoiceData.subtotal.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between mb-2">
@@ -259,12 +266,12 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
                     Tax ({invoiceData.taxRate * 100}%)
                   </span>
                   <span className="text-sm">
-                    £{invoiceData.taxAmount.toFixed(2)}
+                    {invoiceData.currency.symbol}{invoiceData.taxAmount.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between font-bold mt-4 pt-4 border-t border-gray-100">
                   <span>Total Amount Due</span>
-                  <span>£{invoiceData.total.toFixed(2)}</span>
+                  <span>{invoiceData.currency.symbol}{invoiceData.total.toFixed(2)}</span>
                 </div>
               </div>
 

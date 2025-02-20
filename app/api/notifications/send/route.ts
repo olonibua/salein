@@ -20,28 +20,61 @@ export async function POST(req: Request) {
       htmlContent,
       pdfBuffer,
       teamEmails = [],
+      fileName = `invoice-${Date.now()}.pdf`,
     } = await req.json();
 
-    const data = await resend.emails.send({
-      // from: "Salein <onboarding@resend.dev>",
-      from: "Salein <invoices@olonts.site>",
+    // Validate email
+    if (!to || !to.trim()) {
+      return NextResponse.json(
+        { error: "Recipient email is required" },
+        { status: 400 }
+      );
+    }
+
+    console.log("Sending email to:", to);
+    console.log("Attachment size:", pdfBuffer.length);
+
+    const emailData = {
+      // from: "Salein <invoices@olonts.site>",
+
+      from: "Salein <onboarding@resend.dev>",
       to: [to],
       cc: teamEmails,
-      subject: subject,
+      subject,
       html: htmlContent,
       attachments: [
         {
-          filename: `invoice-${Date.now()}.pdf`,
-          content: Buffer.from(new Uint8Array(pdfBuffer)),
+          filename: fileName,
+          content: Buffer.from(pdfBuffer),
         },
       ],
-    });
+    };
 
-    return NextResponse.json({ data });
-  } catch (error) {
-    console.error("Error:", error);
+    console.log("Email data:", { ...emailData, attachments: 'PDF Buffer' });
+
+    try {
+      const data = await resend.emails.send(emailData);
+      console.log("Resend API Response:", data);
+
+      if (data?.error) {
+        throw new Error(`Resend API Error: ${data.error.message}`);
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        id: data?.data?.id || 'sent' 
+      });
+    } catch (resendError: any) {
+      console.error("Resend API Error:", resendError);
+      throw new Error(resendError?.message || "Failed to send via Resend API");
+    }
+  } catch (error: any) {
+    console.error("Detailed error:", error);
     return NextResponse.json(
-      { error: "Failed to send email", details: String(error) },
+      { 
+        error: "Failed to send email", 
+        details: error?.message || "Unknown error occurred"
+      },
       { status: 500 }
     );
   }

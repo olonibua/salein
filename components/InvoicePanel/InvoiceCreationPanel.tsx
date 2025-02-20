@@ -25,20 +25,12 @@ import { Switch } from "../ui/switch";
 import InvoiceModal from "../InvoiceModal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { invoiceTemplates } from "@/components/Invoice/templates";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import codes from "currency-codes/data";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+
+import { InvoiceTemplate, invoiceTemplates, InvoiceData } from "@/types/invoice";
+import { motion, AnimatePresence } from "framer-motion";
+import { allCurrencies } from "@/types/currency";
+import { addDays } from "date-fns";
 
 interface Customer {
   id: string;
@@ -71,18 +63,6 @@ interface InvoiceCreationPanelProps {
   onUpload: () => void;
   onCreateInvoice: () => void;
 }
-
-interface CurrencyType {
-  code: string;
-  number: string;
-  currency: string;
-}
-
-const allCurrencies = codes.map((currency: CurrencyType) => ({
-  label: `${currency.currency} (${currency.code})`,
-  value: currency.code,
-  symbol: currency.code
-}));
 
 const InvoiceCreationPanel = ({
   onUpload,
@@ -123,10 +103,11 @@ const InvoiceCreationPanel = ({
     return saved ? JSON.parse(saved) : [];
   });
   const [open, setOpen] = useState(false);
+  const [hasStartedFilling, setHasStartedFilling] = useState(false);
+  const [isUploadedInvoice, setIsUploadedInvoice] = useState(false);
+
   
-  const [selectedCurrency, setSelectedCurrency] = useState(
-    allCurrencies.find(c => c.value === 'USD') || allCurrencies[0]
-  );
+  
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -167,44 +148,42 @@ const InvoiceCreationPanel = ({
   // Set default dates when component mounts
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
-    // Only set dates if they haven't been set yet
     if (!invoiceData.invoiceDate) {
       updateInvoiceData({
         invoiceDate: today,
-        dueDate: today, // You might want to set this to today + 30 days or similar
+        dueDate: addDays(new Date(), 30).toISOString().split("T")[0], // Set due date 30 days ahead by default
       });
     }
   }, [invoiceData.invoiceDate, updateInvoiceData]);
 
-  // Format date for display
-  // const formatDate = (dateString: string) => {
-  //   if (!dateString) return "";
-  //   const date = new Date(dateString);
-  //   return date.toLocaleDateString("en-GB", {
-  //     day: "2-digit",
-  //     month: "2-digit",
-  //     year: "numeric",
-  //   });
-  // };
+  const handleFromDataChange = (field: string, value: string) => {
+    if (!hasStartedFilling) {
+      setHasStartedFilling(true);
+      toast.info(
+        <div className="flex flex-col gap-1">
+          <span className="font-medium">Privacy First! 🔒</span>
+          <span className="text-sm text-gray-600">
+            All information is stored locally on your device
+          </span>
+        </div>,
+        {
+          duration: 4000,
+          className: "bg-gradient-to-r from-blue-50 to-indigo-50",
+          position: "bottom-right",
+        }
+      );
+    }
 
-  const handleFromAddressChange = (field: string, value: string) => {
-    if (!invoiceData.from.address) {
-      updateFromData({
-        address: {
-          street: "",
-          city: "",
-          state: "",
-          postalCode: "",
-          [field]: value,
-        },
-      });
-    } else {
+    if (field.startsWith('address.')) {
+      const addressField = field.split('.')[1];
       updateFromData({
         address: {
           ...invoiceData.from.address,
-          [field]: value,
-        },
+          [addressField]: value
+        }
       });
+    } else {
+      updateFromData({ [field]: value });
     }
   };
 
@@ -215,6 +194,7 @@ const InvoiceCreationPanel = ({
       quantity: 1,
       unitPrice: "",
       total: 0,
+      currency: invoiceData.currency
     };
     updateItems([...invoiceData.items, newItem]);
   };
@@ -223,29 +203,50 @@ const InvoiceCreationPanel = ({
   const handleItemUpdate = (
     index: number,
     field: string,
-    value: string | number
+    value: string | number | { label: string; value: string; symbol: string }
   ) => {
     const updatedItems = [...invoiceData.items];
-    const numValue =
-      field === "quantity" || field === "unitPrice"
-        ? value === ""
-          ? ""
-          : Number(value)
-        : value;
+    
+    if (field === "currency") {
+      // Only allow currency change if it's the first item
+      if (index === 0) {
+        const selectedCurrency = allCurrencies.find(c => c.value === value);
+        if (selectedCurrency) {
+          // Update all items to use the same currency
+          updatedItems.forEach(item => {
+            item.currency = selectedCurrency;
+          });
+          // Update invoice currency
+          updateInvoiceData({ currency: selectedCurrency });
+        }
+      } else {
+        // Show toast indicating currency can only be changed on first item
+        toast.info("Currency can only be changed on the first item", {
+          duration: 3000,
+        });
+        return;
+      }
+    } else {
+      const numValue = 
+        field === "quantity" || field === "unitPrice"
+          ? value === ""
+            ? ""
+            : Number(value)
+          : value;
 
-    updatedItems[index] = {
-      ...updatedItems[index],
-      [field]: numValue,
-    };
+      updatedItems[index] = {
+        ...updatedItems[index],
+        [field]: numValue,
+      };
+    }
 
-    // Calculate total for this item
+    // Rest of the calculation logic remains the same
     if (field === "quantity" || field === "unitPrice") {
       updatedItems[index].total =
         (updatedItems[index].quantity || 0) *
         (Number(updatedItems[index].unitPrice) || 0);
     }
 
-    // Calculate subtotal, tax, and total
     const subtotal = updatedItems.reduce(
       (sum, item) => sum + (item.total || 0),
       0
@@ -253,7 +254,6 @@ const InvoiceCreationPanel = ({
     const taxAmount = subtotal * (invoiceData.taxRate || 0);
     const total = subtotal + taxAmount;
 
-    // Update items and invoice totals
     updateItems(updatedItems);
     updateInvoiceData({
       subtotal,
@@ -447,10 +447,77 @@ const InvoiceCreationPanel = ({
     updateInvoiceData({ website: details.website });
   };
 
-  // Update invoice context to include currency
-  const handleCurrencySelect = (currency: typeof allCurrencies[0]) => {
-    setSelectedCurrency(currency);
-    updateInvoiceData({ currency: currency });
+  // Add this useEffect for the privacy toast
+  useEffect(() => {
+    setTimeout(() => {
+      toast.info(
+        <div className="flex flex-col gap-1">
+          <span className="font-medium">Local Storage Only</span>
+          <span className="text-sm text-gray-600">
+            All your information is stored locally on your device, not on our servers
+          </span>
+        </div>,
+        {
+          duration: 5000,
+          className: "bg-gradient-to-r from-blue-50 to-indigo-50",
+          icon: "🔒",
+          position: "bottom-right",
+          style: {
+            animation: "slideUp 0.5s ease-out"
+          }
+        }
+      );
+    }, 1000);
+  }, []);
+
+  // Add tab content animations
+  const tabContentVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { 
+      opacity: 1, 
+      x: 0,
+      transition: {
+        duration: 0.3,
+        staggerChildren: 0.1
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      x: 20,
+      transition: {
+        duration: 0.2
+      }
+    }
+  };
+
+  const formatDisplayDate = (dateString: string) => {
+    if (!dateString || dateString === "Invalid Date") return "";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "";
+      return date.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    } catch {
+      return "";
+    }
+  };
+
+  // Add date handling
+  const handleDateChange = (field: 'invoiceDate' | 'dueDate', value: string) => {
+    console.log(`Updating ${field} to:`, value); // Debug log
+    updateInvoiceData({
+      [field]: value
+    });
+  };
+
+  // When file is uploaded
+  const handleFileUpload = async (file: File) => {
+    // ... existing upload logic ...
+    setIsUploadedInvoice(true);
+    setShowInvoiceModal(true);
   };
 
   return (
@@ -474,39 +541,39 @@ const InvoiceCreationPanel = ({
           </h1>
 
           {/* Tabs - Mobile optimized */}
-          <div className="flex border-b border-gray-200 overflow-x-auto hide-scrollbar">
+          <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-none">
             <button
-              className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 whitespace-nowrap ${
+              className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2 whitespace-nowrap ${
                 activeTab === "information"
                   ? "border-b-2 border-black"
                   : "text-gray-500"
               }`}
               onClick={() => setActiveTab("information")}
             >
-              <FileText size={16} className="md:size-18" />
-              <span className="text-xs">Your information</span>
+              <FileText size={14} className="md:w-4 md:h-4" />
+              <span className="text-xs">Information</span>
             </button>
             <button
-              className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 whitespace-nowrap ${
+              className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2 whitespace-nowrap ${
                 activeTab === "templates"
                   ? "border-b-2 border-black"
                   : "text-gray-500"
               }`}
               onClick={() => setActiveTab("templates")}
             >
-              <Layout size={16} className="md:size-18" />
+              <Layout size={14} className="md:w-4 md:h-4" />
               <span className="text-xs">Templates</span>
             </button>
             <button
-              className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 whitespace-nowrap ${
+              className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2 whitespace-nowrap ${
                 activeTab === "new"
                   ? "border-b-2 border-black"
                   : "text-gray-500"
               }`}
               onClick={() => setActiveTab("new")}
             >
-              <PlusCircle size={16} className="md:size-18" />
-              <span className="text-xs">New invoice</span>
+              <PlusCircle size={14} className="md:w-4 md:h-4" />
+              <span className="text-xs">New</span>
             </button>
           </div>
         </div>
@@ -520,612 +587,633 @@ const InvoiceCreationPanel = ({
           hover:scrollbar-thumb-gray-400
         `}
         >
-          {activeTab === "information" && (
-            <div className="p-4 md:p-6">
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold mb-2">Information</h2>
-                <p className="text-gray-500 text-sm">
-                  Set your invoice details to be automatically applied every
-                  time you create a new invoice.
-                </p>
-              </div>
-
-              <div className="flex gap-4 mb-8">
-                <button
-                  className={`flex-1 p-4 rounded-lg border flex flex-col items-center gap-2 ${
-                    accountType === "personal"
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200"
-                  }`}
-                  onClick={() => setAccountType("personal")}
+          <AnimatePresence mode="wait">
+            {activeTab === "information" && (
+              <motion.div
+                key="information"
+                variants={tabContentVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="p-4"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
                 >
-                  <User
-                    size={24}
-                    className={
-                      accountType === "personal"
-                        ? "text-blue-500"
-                        : "text-gray-500"
-                    }
-                  />
-                  <span>Personal</span>
-                </button>
-                <button
-                  className={`flex-1 p-4 rounded-lg border flex flex-col items-center gap-2 ${
-                    accountType === "business"
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200"
-                  }`}
-                  onClick={() => setAccountType("business")}
-                >
-                  <Briefcase
-                    size={24}
-                    className={
-                      accountType === "business"
-                        ? "text-blue-500"
-                        : "text-gray-500"
-                    }
-                  />
-                  <span>Business</span>
-                </button>
-              </div>
+                  <div className="mb-6">
+                    <h2 className="text-lg font-semibold mb-2">Information</h2>
+                    <p className="text-gray-500 text-sm">
+                      Set your invoice details to be automatically applied every
+                      time you create a new invoice.
+                    </p>
+                  </div>
 
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm text-gray-500 font-medium mb-4">
-                    CORE INFORMATION
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm mb-1 block">
-                        Personal name
-                      </label>
-                      <Input
-                        value={invoiceData.from.name}
-                        onChange={(e) =>
-                          updateFromData({ name: e.target.value })
+                  <div className="flex gap-4 mb-8">
+                    <button
+                      className={`flex-1 p-4 rounded-lg border flex flex-col items-center gap-2 ${
+                        accountType === "personal"
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200"
+                      }`}
+                      onClick={() => setAccountType("personal")}
+                    >
+                      <User
+                        size={24}
+                        className={
+                          accountType === "personal"
+                            ? "text-blue-500"
+                            : "text-gray-500"
                         }
-                        placeholder="Enter your name"
-                        className="w-full"
                       />
-                    </div>
-                    <div>
-                      <label className="text-sm mb-1 block">
-                        Personal email
-                      </label>
-                      <Input
-                        value={invoiceData.from.email}
-                        onChange={(e) =>
-                          updateFromData({ email: e.target.value })
+                      <span>Personal</span>
+                    </button>
+                    <button
+                      className={`flex-1 p-4 rounded-lg border flex flex-col items-center gap-2 ${
+                        accountType === "business"
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200"
+                      }`}
+                      onClick={() => setAccountType("business")}
+                    >
+                      <Briefcase
+                        size={24}
+                        className={
+                          accountType === "business"
+                            ? "text-blue-500"
+                            : "text-gray-500"
                         }
-                        placeholder="Enter your email"
-                        className="w-full"
                       />
-                    </div>
+                      <span>Business</span>
+                    </button>
+                  </div>
 
-                    <AddressFields
-                      showAddress={showAddress}
-                      onShowAddressChange={setShowAddress}
-                      values={invoiceData.from.address || {}}
-                      onChange={handleFromAddressChange}
-                    />
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm mb-1 block">
-                          Phone number
-                        </label>
-                        <div className="flex gap-2">
-                          <select className="w-24 rounded-md border p-2">
-                            <option>+234</option>
-                          </select>
-                          <Input
-                            value={invoiceData.from.phone || ""}
-                            onChange={(e) =>
-                              updateFromData({ phone: e.target.value })
-                            }
-                            placeholder="Enter phone number"
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm text-gray-500 font-medium mb-4">
+                        CORE INFORMATION
+                      </h3>
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm text-gray-600">
-                            Show logo
+                        <div>
+                          <label className="text-sm mb-1 block">
+                            Personal name
                           </label>
-                          <Switch
-                            checked={showLogo}
-                            onCheckedChange={setShowLogo}
+                          <Input
+                            value={invoiceData.from.name}
+                            onChange={(e) =>
+                              handleFromDataChange("name", e.target.value)
+                            }
+                            placeholder="Enter your name"
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm mb-1 block">
+                            Personal email
+                          </label>
+                          <Input
+                            value={invoiceData.from.email}
+                            onChange={(e) =>
+                              handleFromDataChange("email", e.target.value)
+                            }
+                            placeholder="Enter your email"
+                            className="w-full"
                           />
                         </div>
 
-                        {showLogo && (
-                          <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                            <div className="w-20 h-20 bg-gray-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                              <label className="cursor-pointer w-full h-full flex items-center justify-center">
-                                <input 
-                                  type="file" 
-                                  accept="image/*" 
-                                  onChange={handleLogoUpload} 
-                                  className="hidden"
-                                />
-                                <span className="text-sm text-gray-500">
-                                  Drop logo here or click to browse
-                                </span>
-                              </label>
+                        <AddressFields
+                          showAddress={showAddress}
+                          onShowAddressChange={setShowAddress}
+                          values={invoiceData.from.address || {}}
+                          onChange={handleFromDataChange}
+                        />
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-sm mb-1 block">
+                              Phone number
+                            </label>
+                            <div className="flex gap-2">
+                              <select className="w-24 rounded-md border p-2">
+                                <option>+234</option>
+                              </select>
+                              <Input
+                                value={invoiceData.from.phone || ""}
+                                onChange={(e) =>
+                                  handleFromDataChange("phone", e.target.value)
+                                }
+                                placeholder="Enter phone number"
+                                className="flex-1"
+                              />
                             </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
-                {savedPersonalDetails.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-sm text-gray-500 font-medium mb-4">
-                      SAVED DETAILS
-                    </h3>
-                    <div className="space-y-2">
-                      {savedPersonalDetails.map((details) => (
-                        <div
-                          key={details.id}
-                          className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                          onClick={() => handleSelectSavedDetails(details)}
-                        >
-                          <p className="font-medium">{details.name}</p>
-                          <p className="text-sm text-gray-600">{details.email}</p>
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <label className="text-sm text-gray-600">
+                                Show logo
+                              </label>
+                              <Switch
+                                checked={showLogo}
+                                onCheckedChange={setShowLogo}
+                              />
+                            </div>
+
+                            {showLogo && (
+                              <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                                <div className="w-20 h-20 bg-gray-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
+                                  <label className="cursor-pointer w-full h-full flex items-center justify-center">
+                                    <input 
+                                      type="file" 
+                                      accept="image/*" 
+                                      onChange={handleLogoUpload} 
+                                      className="hidden"
+                                    />
+                                    <span className="text-sm text-gray-500">
+                                      Drop logo here or click to browse
+                                    </span>
+                                  </label>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleSavePersonalDetails}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      Save Personal Details
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 border-t pt-6">
-                <h3 className="text-sm text-gray-500 font-medium mb-4">
-                  PROCEED TO SELECT TEMPLATE
-                </h3>
-                <Button
-                  variant="outline"
-                  className="w-full flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800"
-                  onClick={handleNextToTemplates}
-                >
-                  <ArrowRight size={16} />
-                  <span>Next</span>
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "templates" && (
-            <div className="p-4 md:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {invoiceTemplates.map((template) => (
-                  <div
-                    key={template.id}
-                    className={cn(
-                      "border rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors",
-                      selectedTemplate === template.id && "border-blue-500 bg-blue-50"
-                    )}
-                    onClick={() => setSelectedTemplate(template.id)}
-                  >
-                    <div className="bg-gray-50 rounded-lg p-6 mb-2">
-                      <div className="w-full h-32 bg-white rounded shadow-sm">
-                        {/* Template preview image or placeholder */}
                       </div>
                     </div>
-                    <p className="text-sm font-medium">{template.name}</p>
-                    <p className="text-xs text-gray-500">{template.description}</p>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Next button */}
-              <div className="mt-8 border-t pt-6">
-                <Button
-                  className="w-full flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800"
-                  onClick={() => setActiveTab("new")}
-                >
-                  <span>Continue to Invoice</span>
-                  <ArrowRight size={16} />
-                </Button>
-              </div>
-            </div>
-          )}
 
-          {activeTab === "new" && (
-            <div className="p-4 md:p-6">
-              <div className="mb-6">
-                <label className="text-sm mb-1 block text-gray-500">
-                  Currency
-                </label>
-                <Popover open={open} onOpenChange={setOpen}>
-                  <PopoverTrigger asChild>
+                    {savedPersonalDetails.length > 0 && (
+                      <div className="mb-6">
+                        <h3 className="text-sm text-gray-500 font-medium mb-4">
+                          SAVED DETAILS
+                        </h3>
+                        <div className="space-y-2">
+                          {savedPersonalDetails.map((details) => (
+                            <div
+                              key={details.id}
+                              className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                              onClick={() => handleSelectSavedDetails(details)}
+                            >
+                              <p className="font-medium">{details.name}</p>
+                              <p className="text-sm text-gray-600">{details.email}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleSavePersonalDetails}
+                          variant="outline"
+                          className="w-full"
+                        >
+                          Save Personal Details
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 border-t pt-6">
+                    <h3 className="text-sm text-gray-500 font-medium mb-4">
+                      PROCEED TO SELECT TEMPLATE
+                    </h3>
                     <Button
                       variant="outline"
-                      role="combobox"
-                      aria-expanded={open}
-                      className="w-full justify-between"
+                      className="w-full flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800"
+                      onClick={handleNextToTemplates}
                     >
-                      {selectedCurrency.label}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      <ArrowRight size={16} />
+                      <span>Next</span>
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0">
-                    <Command>
-                      <CommandInput placeholder="Search currency..." />
-                      <CommandEmpty>No currency found.</CommandEmpty>
-                      <CommandGroup className="max-h-[300px] overflow-y-auto">
-                        {allCurrencies.map((currency) => (
-                          <CommandItem
-                            key={currency.value}
-                            onSelect={() => {
-                              handleCurrencySelect(currency);
-                              setOpen(false);
-                            }}
-                            className="flex items-center"
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedCurrency.value === currency.value 
-                                  ? "opacity-100" 
-                                  : "opacity-0"
-                              )}
-                            />
-                            <span className="flex-1">{currency.label}</span>
-                            <span className="text-gray-500 text-sm">
-                              {currency.symbol}
-                            </span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              {/* Customer Selection - Adjusted for mobile */}
-              <div className="mb-4 md:mb-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-sm font-medium">Customer</h3>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {activeTab === "templates" && (
+              <motion.div
+                key="templates"
+                variants={tabContentVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="p-4"
+              >
+                <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {invoiceTemplates.map((template, index) => (
+                    <motion.div
+                      key={template.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="border rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors">
+                        <div className="bg-gray-50 rounded-lg p-6 mb-2">
+                          <div className="w-full h-32 bg-white rounded shadow-sm">
+                            {/* Template preview image or placeholder */}
+                          </div>
+                        </div>
+                        <p className="text-sm font-medium">{template.name}</p>
+                        <p className="text-xs text-gray-500">{template.description}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+                
+                {/* Next button */}
+                <div className="mt-8 border-t pt-6">
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedCustomer(null)}
+                    className="w-full flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800"
+                    onClick={() => setActiveTab("new")}
                   >
-                    <Plus size={16} className="mr-2" />
-                    New Customer
+                    <span>Continue to Invoice</span>
+                    <ArrowRight size={16} />
                   </Button>
                 </div>
+              </motion.div>
+            )}
 
-                {/* Search Input */}
-                <div className="relative mb-4">
-                  <Search
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                    size={16}
-                  />
-                  <Input
-                    className="pl-10"
-                    placeholder="Search customer"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
+            {activeTab === "new" && (
+              <motion.div
+                key="new"
+                variants={tabContentVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="p-4"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  {/* Customer Selection - Adjusted for mobile */}
+                  <div className="mb-4 md:mb-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-sm font-medium">Customer</h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedCustomer(null)}
+                      >
+                        <Plus size={16} className="mr-2" />
+                        New Customer
+                      </Button>
+                    </div>
 
-                {/* Customer List */}
-                {searchQuery &&
-                  filteredCustomers.length > 0 &&
-                  !selectedCustomer && (
-                    <div className="mb-4 border rounded-lg divide-y">
-                      {filteredCustomers.map((customer) => (
-                        <div
-                          key={customer.id}
-                          className="p-3 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
-                          onClick={() => {
-                            setSelectedCustomer(customer.id);
-                            updateToData({
-                              name: customer.name,
-                              email: customer.email,
-                              address: customer.address,
-                              phone: customer.phone,
-                            });
-                          }}
-                        >
+                    {/* Search Input */}
+                    <div className="relative mb-4">
+                      <Search
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                        size={16}
+                      />
+                      <Input
+                        className="pl-10"
+                        placeholder="Search customer"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Customer List */}
+                    {searchQuery &&
+                      filteredCustomers.length > 0 &&
+                      !selectedCustomer && (
+                        <div className="mb-4 border rounded-lg divide-y">
+                          {filteredCustomers.map((customer) => (
+                            <div
+                              key={customer.id}
+                              className="p-3 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
+                              onClick={() => {
+                                setSelectedCustomer(customer.id);
+                                updateToData({
+                                  name: customer.name,
+                                  email: customer.email,
+                                  address: customer.address,
+                                  phone: customer.phone,
+                                });
+                              }}
+                            >
+                              <div>
+                                <p className="font-medium">{customer.name}</p>
+                                <p className="text-sm text-gray-500">
+                                  {customer.email}
+                                </p>
+                              </div>
+                              <ChevronDown size={16} className="text-gray-400" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                    {selectedCustomer && !editingCustomer ? (
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex justify-between items-center">
                           <div>
-                            <p className="font-medium">{customer.name}</p>
+                            <p className="font-medium">
+                              {
+                                customers.find((c) => c.id === selectedCustomer)
+                                  ?.name
+                              }
+                            </p>
                             <p className="text-sm text-gray-500">
-                              {customer.email}
+                              {
+                                customers.find((c) => c.id === selectedCustomer)
+                                  ?.email
+                              }
                             </p>
                           </div>
-                          <ChevronDown size={16} className="text-gray-400" />
+                          <div className="flex gap-2">
+                            <button
+                              className="text-sm text-blue-500"
+                              onClick={() => handleEditCustomer(selectedCustomer)}
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              className="text-sm text-gray-500"
+                              onClick={() => setSelectedCustomer(null)}
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                {selectedCustomer && !editingCustomer ? (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">
-                          {
-                            customers.find((c) => c.id === selectedCustomer)
-                              ?.name
-                          }
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {
-                            customers.find((c) => c.id === selectedCustomer)
-                              ?.email
-                          }
-                        </p>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          className="text-sm text-blue-500"
-                          onClick={() => handleEditCustomer(selectedCustomer)}
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          className="text-sm text-gray-500"
-                          onClick={() => setSelectedCustomer(null)}
-                        >
-                          <X size={16} />
-                        </button>
+                    ) : editingCustomer ? (
+                      <div className="space-y-4">
+                        <Input
+                          placeholder="Customer name"
+                          value={invoiceData.to.name}
+                          onChange={(e) => updateToData({ name: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Customer email"
+                          value={invoiceData.to.email}
+                          onChange={(e) => updateToData({ email: e.target.value })}
+                        />
+                        <AddressFields
+                          showAddress={true}
+                          onShowAddressChange={() => {}}
+                          values={invoiceData.to.address || {}}
+                          onChange={(field, value) =>
+                            updateToData({
+                              address: {
+                                ...invoiceData.to.address,
+                                [field]: value,
+                              },
+                            })
+                          }
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={handleSaveEditedCustomer}
+                            variant="default"
+                            className="flex-1"
+                          >
+                            Save changes
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setEditingCustomer(null);
+                              setSelectedCustomer(null);
+                            }}
+                            variant="outline"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ) : editingCustomer ? (
-                  <div className="space-y-4">
-                    <Input
-                      placeholder="Customer name"
-                      value={invoiceData.to.name}
-                      onChange={(e) => updateToData({ name: e.target.value })}
-                    />
-                    <Input
-                      placeholder="Customer email"
-                      value={invoiceData.to.email}
-                      onChange={(e) => updateToData({ email: e.target.value })}
-                    />
-                    <AddressFields
-                      showAddress={true}
-                      onShowAddressChange={() => {}}
-                      values={invoiceData.to.address || {}}
-                      onChange={(field, value) =>
-                        updateToData({
-                          address: {
-                            ...invoiceData.to.address,
-                            [field]: value,
-                          },
-                        })
-                      }
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={handleSaveEditedCustomer}
-                        variant="default"
-                        className="flex-1"
-                      >
-                        Save changes
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setEditingCustomer(null);
-                          setSelectedCustomer(null);
-                        }}
-                        variant="outline"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <Input
-                      placeholder="Customer name"
-                      value={invoiceData.to.name}
-                      onChange={(e) => updateToData({ name: e.target.value })}
-                    />
-                    <Input
-                      placeholder="Customer email"
-                      value={invoiceData.to.email}
-                      onChange={(e) => updateToData({ email: e.target.value })}
-                    />
+                    ) : (
+                      <div className="space-y-4">
+                        <Input
+                          placeholder="Customer name"
+                          value={invoiceData.to.name}
+                          onChange={(e) => updateToData({ name: e.target.value })}
+                        />
+                        <Input
+                          placeholder="Customer email"
+                          value={invoiceData.to.email}
+                          onChange={(e) => updateToData({ email: e.target.value })}
+                        />
 
-                    {/* Recipient Address Fields */}
-                    <AddressFields
-                      showAddress={showRecipientAddress}
-                      onShowAddressChange={setShowRecipientAddress}
-                      values={invoiceData.to.address || {}}
-                      onChange={(field, value) =>
-                        updateToData({
-                          address: {
-                            ...invoiceData.to.address,
-                            [field]: value,
-                          },
-                        })
-                      }
-                    />
+                        {/* Recipient Address Fields */}
+                        <AddressFields
+                          showAddress={showRecipientAddress}
+                          onShowAddressChange={setShowRecipientAddress}
+                          values={invoiceData.to.address || {}}
+                          onChange={(field, value) =>
+                            updateToData({
+                              address: {
+                                ...invoiceData.to.address,
+                                [field]: value,
+                              },
+                            })
+                          }
+                        />
 
-                    {invoiceData.to.name && invoiceData.to.email && (
-                      <Button
-                        onClick={handleAddNewCustomer}
-                        variant="outline"
-                        className="w-full"
-                      >
-                        Save as new customer
-                      </Button>
+                        {invoiceData.to.name && invoiceData.to.email && (
+                          <Button
+                            onClick={handleAddNewCustomer}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            Save as new customer
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
 
-              {/* Remove Company Details section and replace with simple input fields */}
-             
-              
-              {/* Invoice Details - Adjusted for mobile */}
-              <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
-                <div>
-                  <label className="text-sm mb-1 block text-gray-500">
-                    Issue Date
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type="date"
-                      value={invoiceData.invoiceDate}
-                      onChange={(e) =>
-                        updateInvoiceData({ invoiceDate: e.target.value })
-                      }
-                      className="pl-3 pr-8 w-full"
-                    />
-                    <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+                  {/* Remove Company Details section and replace with simple input fields */}
+                 
+                  
+                  {/* Invoice Details - Adjusted for mobile */}
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="text-sm mb-1 block">Invoice Date</label>
+                      <Input
+                        type="date"
+                        value={invoiceData.invoiceDate}
+                        onChange={(e) => handleDateChange('invoiceDate', e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm mb-1 block">Due Date</label>
+                      <Input
+                        type="date"
+                        value={invoiceData.dueDate}
+                        onChange={(e) => handleDateChange('dueDate', e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm mb-1 block text-gray-500">
-                    Due Date
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type="date"
-                      value={invoiceData.dueDate}
-                      onChange={(e) =>
-                        updateInvoiceData({ dueDate: e.target.value })
-                      }
-                      className="pl-3 pr-8 w-full"
-                    />
-                    <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
 
-              {/* Items Table - Adjusted for mobile */}
-              <div className="space-y-2">
-                <div className="grid grid-cols-12 gap-2 md:gap-4 items-center mb-2 text-xs md:text-sm">
-                  <div className="col-span-5">
-                    <label className="text-sm text-gray-600">Item</label>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-sm text-gray-600">Quantity</label>
-                  </div>
-                  <div className="col-span-3">
-                    <label className="text-sm text-gray-600">
-                      Unit Price (£)
-                    </label>
-                  </div>
-                </div>
+                  {/* Items Table - Adjusted for mobile */}
+                  <AnimatePresence>
+                    <motion.div 
+                      className="space-y-2"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                     
 
-                {invoiceData.items.map((item, index) => (
-                  <div
-                    key={index}
-                    className="grid grid-cols-12 gap-2 md:gap-4 items-center bg-gray-50 rounded-lg p-3"
+                      <div className="grid grid-cols-12 gap-2 md:gap-4 items-center mb-2 text-xs md:text-sm">
+                        <div className="col-span-4 md:col-span-5">
+                          <span className="font-medium">Item</span>
+                        </div>
+                        <div className="col-span-2 md:col-span-2 text-right">
+                          <span className="font-medium">Qty</span>
+                        </div>
+                        <div className="col-span-3 md:col-span-2 text-right">
+                          <span className="font-medium">Price</span>
+                        </div>
+                        <div className="col-span-2 md:col-span-2 text-right">
+                          <span className="font-medium">Currency</span>
+                        </div>
+                        <div className="col-span-1 md:col-span-1"></div>
+                      </div>
+
+                      {invoiceData.items.map((item, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          transition={{ duration: 0.2, delay: index * 0.1 }}
+                          className="grid grid-cols-12 gap-2 md:gap-4 items-center bg-gray-50 rounded-lg p-3"
+                        >
+                          <div className="col-span-4 md:col-span-5">
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <Input
+                                value={item.name}
+                                onChange={(e) =>
+                                  handleItemUpdate(index, "name", e.target.value)
+                                }
+                                placeholder="Item name"
+                                className="bg-white text-xs md:text-sm"
+                              />
+                            </motion.div>
+                          </div>
+                          <div className="col-span-2 md:col-span-2">
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) =>
+                                  handleItemUpdate(index, "quantity", e.target.value)
+                                }
+                                placeholder="0"
+                                className="bg-white text-right text-xs md:text-sm"
+                              />
+                            </motion.div>
+                          </div>
+                          <div className="col-span-3 md:col-span-2">
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <Input
+                                type="text"
+                                value={item.unitPrice}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/[^0-9.]/g, "");
+                                  handleItemUpdate(index, "unitPrice", value);
+                                }}
+                                placeholder="0.00"
+                                className="bg-white text-right text-xs md:text-sm"
+                              />
+                            </motion.div>
+                          </div>
+                          <div className="col-span-2 md:col-span-2">
+                            <Select
+                              value={item.currency?.value || invoiceData.currency.value}
+                              onValueChange={(value) => handleItemUpdate(index, "currency", value)}
+                              disabled={index !== 0}
+                            >
+                              <SelectTrigger className="bg-white h-9 text-xs md:text-sm">
+                                <SelectValue placeholder="Currency" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {allCurrencies.map((currency) => (
+                                  <SelectItem 
+                                    key={currency.value} 
+                                    value={currency.value}
+                                    className="text-xs md:text-sm"
+                                  >
+                                    {currency.symbol} ({currency.value})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <motion.div 
+                            className="col-span-1 md:col-span-1 flex justify-end"
+                            whileHover={{ scale: 1.1, rotate: 90 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <button
+                              className="p-2 hover:bg-red-100 hover:text-red-500 rounded-full transition-colors"
+                              onClick={() => handleRemoveItem(index)}
+                            >
+                              <X size={14} className="md:w-4 md:h-4" />
+                            </button>
+                          </motion.div>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  </AnimatePresence>
+
+                  <button
+                    onClick={handleAddItem}
+                    className="w-full mt-4 p-3 bg-gray-50 rounded-lg text-sm font-medium hover:bg-gray-100 flex items-center justify-center gap-2"
                   >
-                    <div className="col-span-5">
+                    <Plus size={16} />
+                    Add Item
+                  </button>
+
+                  {/* After items table, before payment memo */}
+                  <div className="mt-6 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">Sales tax</label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="text"
+                          className="w-20"
+                          placeholder="0"
+                          value={
+                            invoiceData.taxRate
+                              ? (invoiceData.taxRate * 100).toString()
+                              : ""
+                          }
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9.]/g, "");
+                            handleTaxRateChange(value);
+                          }}
+                        />
+                        <span className="text-sm text-gray-600">%</span>
+                      </div>
+                    </div>
+
+                    {/* Payment Memo */}
+                    <div>
+                      <label className="text-sm mb-1 block">Payment Memo</label>
                       <Input
-                        value={item.name}
+                        value={invoiceData.paymentMemo}
                         onChange={(e) =>
-                          handleItemUpdate(index, "name", e.target.value)
+                          updateInvoiceData({ paymentMemo: e.target.value })
                         }
-                        placeholder="Item name"
-                        className="bg-white"
+                        placeholder="Add payment details"
                       />
-                    </div>
-                    <div className="col-span-2">
-                      <Input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          handleItemUpdate(index, "quantity", e.target.value)
-                        }
-                        className="bg-white"
-                      />
-                    </div>
-                    <div className="col-span-3">
-                      <Input
-                        type="text"
-                        value={item.unitPrice}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/[^0-9.]/g, "");
-                          handleItemUpdate(index, "unitPrice", value);
-                        }}
-                        placeholder="0.00"
-                        className="bg-white"
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      <button
-                        className="p-2 hover:bg-gray-200 rounded-full"
-                        onClick={() => handleRemoveItem(index)}
-                      >
-                        <X size={16} />
-                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              <button
-                onClick={handleAddItem}
-                className="w-full mt-4 p-3 bg-gray-50 rounded-lg text-sm font-medium hover:bg-gray-100 flex items-center justify-center gap-2"
-              >
-                <Plus size={16} />
-                Add Item
-              </button>
-
-              {/* After items table, before payment memo */}
-              <div className="mt-6 space-y-4">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Sales tax</label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="text"
-                      className="w-20"
-                      placeholder="0"
-                      value={
-                        invoiceData.taxRate
-                          ? (invoiceData.taxRate * 100).toString()
-                          : ""
-                      }
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9.]/g, "");
-                        handleTaxRateChange(value);
-                      }}
-                    />
-                    <span className="text-sm text-gray-600">%</span>
-                  </div>
-                </div>
-
-                {/* Payment Memo */}
-                <div>
-                  <label className="text-sm mb-1 block">Payment Memo</label>
-                  <Input
-                    value={invoiceData.paymentMemo}
-                    onChange={(e) =>
-                      updateInvoiceData({ paymentMemo: e.target.value })
-                    }
-                    placeholder="Add payment details"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Create Invoice Button - Make it fixed for mobile */}
@@ -1157,6 +1245,7 @@ const InvoiceCreationPanel = ({
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
         recipientEmail={invoiceData.to.email}
+        isUploadedInvoice={isUploadedInvoice}
       />
     </>
   );

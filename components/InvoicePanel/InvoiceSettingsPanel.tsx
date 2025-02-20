@@ -1,15 +1,16 @@
 "use client";
-import React, { useState } from "react";
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
-import { ArrowLeft, Plus, Upload, FileText, Clock } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+
+import { ArrowLeft, Plus, Upload, FileText, Clock, Trash2 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import { cn } from "@/lib/utils";
 import InvoiceCreationPanel from "./InvoiceCreationPanel";
 import Invoice from "../Invoice/Invoice";
 import UploadInvoiceModal from "../Invoice/UploadInvoiceModal";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 // interface TeamMember {
 //   email: string;
@@ -29,6 +30,12 @@ interface InvoiceRecord {
   status: "sent" | "pending" | "failed";
   createdAt: string;
   amount: number;
+  teamEmails: string[];
+  reminderEnabled: boolean;
+  reminderInterval: "daily" | "weekly" | "biweekly" | "monthly";
+  reminderCount: number;
+  invoiceDate: string;
+  dueDate: string;
 }
 
 type ReminderInterval = "daily" | "weekly" | "biweekly" | "monthly";
@@ -40,21 +47,63 @@ const InvoiceSettingsPanel = ({ onBack }: InvoiceSettingsPanelProps) => {
   
   // State for invoice records
   const [invoiceRecords, setInvoiceRecords] = useState<InvoiceRecord[]>([]);
-  
-  // Original settings state
-  const [settings, setSettings] = useState({
-    recipientEmail: "",
-    teamEmails: [] as string[],
-    amount: 0,
-    reminderEnabled: false,
-    reminderInterval: "weekly" as ReminderInterval,
-    reminderCount: 3,
-  });
-
+  console.log(invoiceRecords)
   const [loading, setLoading] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Add state for countdown
+  const [countdowns, setCountdowns] = useState<{ [key: string]: string }>({});
+
+  const router = useRouter();
+
+  // Add useEffect to load invoices from localStorage
+  useEffect(() => {
+    const loadInvoices = () => {
+      try {
+        const savedInvoices = localStorage.getItem('invoices');
+        if (savedInvoices) {
+          setInvoiceRecords(JSON.parse(savedInvoices));
+        }
+      } catch (error) {
+        console.error('Error loading invoices:', error);
+      }
+    };
+
+    loadInvoices();
+    // Add event listener for storage changes
+    window.addEventListener('storage', loadInvoices);
+    return () => window.removeEventListener('storage', loadInvoices);
+  }, []);
+
+  // Update countdowns every second
+  useEffect(() => {
+    const updateCountdowns = () => {
+      const newCountdowns: { [key: string]: string } = {};
+      invoiceRecords.forEach((invoice) => {
+        if (invoice.dueDate) {
+          const dueDate = new Date(invoice.dueDate);
+          const now = new Date();
+          
+          // Ensure proper date comparison
+          if (dueDate.getTime() > now.getTime()) {
+            newCountdowns[invoice.id] = formatDistanceToNow(dueDate, { 
+              addSuffix: true,
+              includeSeconds: true 
+            });
+          } else {
+            newCountdowns[invoice.id] = 'Overdue';
+          }
+        }
+      });
+      setCountdowns(newCountdowns);
+    };
+
+    updateCountdowns();
+    const interval = setInterval(updateCountdowns, 1000); // Update every second for more accuracy
+    return () => clearInterval(interval);
+  }, [invoiceRecords]);
 
   // Handle mode selection
   const handleModeSelection = (mode: InvoiceMode) => {
@@ -66,52 +115,28 @@ const InvoiceSettingsPanel = ({ onBack }: InvoiceSettingsPanelProps) => {
     }
   };
 
-  const handleSaveSettings = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/invoices/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          recipientEmail: settings.recipientEmail,
-          teamEmails: settings.teamEmails,
-          amount: settings.amount,
-          reminderEnabled: settings.reminderEnabled,
-          reminderInterval: settings.reminderInterval,
-          reminderCount: settings.reminderCount,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save invoice settings");
-      }
-
-      toast.success("Settings saved successfully");
-      setShowInvoiceModal(true);
-    } catch (error) {
-      toast.error("Failed to save settings");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addTeamMember = () => {
-    if (!settings.teamEmails.includes(settings.recipientEmail)) {
-      setSettings((prev) => ({
-        ...prev,
-        teamEmails: [...prev.teamEmails, prev.recipientEmail],
-      }));
-    }
-  };
-
   const handleInvoiceUploaded = () => {
     setShowUploadModal(false);
     setIsTransitioning(true);
-    setViewMode("upload");
     setTimeout(() => setIsTransitioning(false), 300);
+  };
+
+  const handleDeleteInvoice = (id: string) => {
+    try {
+      // Get current invoices from localStorage
+      const savedInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+      // Filter out the deleted invoice
+      const updatedInvoices = savedInvoices.filter((invoice: InvoiceRecord) => invoice.id !== id);
+      // Save back to localStorage
+      localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
+      // Update state
+      setInvoiceRecords(updatedInvoices);
+      
+      toast.success("Invoice deleted successfully");
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      toast.error("Failed to delete invoice");
+    }
   };
 
   return (
@@ -119,13 +144,7 @@ const InvoiceSettingsPanel = ({ onBack }: InvoiceSettingsPanelProps) => {
       "opacity-50 transition-opacity duration-300": isTransitioning
     })}>
       {/* Main Panel - Now wider */}
-      <div
-        className={cn(
-          "w-full",
-          "h-screen border-r border-gray-200 bg-white",
-          ""
-        )}
-      >
+      <div className={cn("w-full h-screen border-r border-gray-200 bg-white")}>
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
           <div className="p-6 flex items-center justify-between">
@@ -159,9 +178,7 @@ const InvoiceSettingsPanel = ({ onBack }: InvoiceSettingsPanelProps) => {
                     <div className="p-3 bg-blue-100 rounded-lg">
                       <Plus className="text-blue-600" size={24} />
                     </div>
-                    <h2 className="text-xl font-semibold">
-                      Create New Invoice
-                    </h2>
+                    <h2 className="text-xl font-semibold">Create New Invoice</h2>
                   </div>
                   <p className="text-gray-600">
                     Create a professional invoice using our template
@@ -198,25 +215,75 @@ const InvoiceSettingsPanel = ({ onBack }: InvoiceSettingsPanelProps) => {
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Invoice
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Recipient
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Amount
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due In</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {/* Placeholder for invoice records */}
+                      {invoiceRecords.map((invoice) => (
+                        <tr key={invoice.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {invoice.id}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-500">
+                              {invoice.recipientEmail}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              invoice.status === 'sent' 
+                                ? 'bg-green-100 text-green-800'
+                                : invoice.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {invoice.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            £{(invoice.amount || 0).toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            }) : 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            }) : 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`text-sm ${
+                              countdowns[invoice.id]?.toLowerCase().includes('ago') ? 'text-red-500' : 'text-gray-500'
+                            }`}>
+                              {countdowns[invoice.id] || 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                            <button
+                              onClick={() => handleDeleteInvoice(invoice.id)}
+                              className="text-red-500 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded-full"
+                              title="Delete Invoice"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -224,214 +291,25 @@ const InvoiceSettingsPanel = ({ onBack }: InvoiceSettingsPanelProps) => {
             </>
           ) : viewMode === "create" ? (
             <div className="flex flex-1 md:space-x-3 p-10 bg-gray-100 mx-auto">
-              <div className="hidden md:block flex-1 ">
+              <div className="hidden md:block flex-1">
                 <Invoice />
               </div>
               <InvoiceCreationPanel
                 onUpload={() => {}}
                 onCreateInvoice={() => {}}
-                //@ts-ignore
-                // onUpload={() => setShowUploadModal(true)}
-                //@ts-ignore
-                // onCreateInvoice={handleInvoiceCreated}
               />
             </div>
-          ) : (
-            
-            // Upload view - maintain original settings panel functionality
-            <div className="max-w-2xl mx-auto">
-              {/* Original settings content */}
-              <section className="space-y-4">
-                <h2 className="text-sm font-medium text-gray-500">
-                  RECIPIENT DETAILS
-                </h2>
-                <div className="space-y-3">
-                  <label className="text-sm font-medium block">
-                    Default Recipient Email
-                  </label>
-                  <Input
-                    type="email"
-                    value={settings.recipientEmail}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        recipientEmail: e.target.value,
-                      }))
-                    }
-                    placeholder="recipient@example.com"
-                    className="w-full"
-                  />
-                </div>
-              </section>
-
-              {/* Team Members */}
-              <section className="space-y-4">
-                <h2 className="text-sm font-medium text-gray-500">
-                  TEAM MEMBERS
-                </h2>
-                <div className="space-y-3">
-                  <div className="flex gap-2">
-                    <Input
-                      type="email"
-                      value={settings.recipientEmail}
-                      onChange={(e) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          recipientEmail: e.target.value,
-                        }))
-                      }
-                      placeholder="team@example.com"
-                      className="flex-1"
-                    />
-                    <Button
-                      onClick={addTeamMember}
-                      variant="outline"
-                      className="whitespace-nowrap"
-                    >
-                      Add
-                    </Button>
-                  </div>
-                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                    {settings.teamEmails.map((email) => (
-                      <div
-                        key={email}
-                        className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
-                      >
-                        <span className="text-sm truncate flex-1 mr-2">
-                          {email}
-                        </span>
-                        <button
-                          onClick={() =>
-                            setSettings((prev) => ({
-                              ...prev,
-                              teamEmails: prev.teamEmails.filter(
-                                (e) => e !== email
-                              ),
-                            }))
-                          }
-                          className="text-gray-400 hover:text-gray-600 p-1"
-                          aria-label="Remove team member"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              {/* Reminders */}
-              <section className="space-y-4">
-                <h2 className="text-sm font-medium text-gray-500">
-                  REMINDER SETTINGS
-                </h2>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">
-                      Enable Reminders
-                    </label>
-                    <Switch
-                      checked={settings.reminderEnabled}
-                      onCheckedChange={(value) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          reminderEnabled: value,
-                        }))
-                      }
-                    />
-                  </div>
-
-                  {settings.reminderEnabled && (
-                    <div className="space-y-4 animate-in fade-in-50">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium block">
-                          Number of Reminders
-                        </label>
-                        <Input
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={settings.reminderCount}
-                          onChange={(e) =>
-                            setSettings((prev) => ({
-                              ...prev,
-                              reminderCount: Number(e.target.value),
-                            }))
-                          }
-                          className="w-full"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium block">
-                          Reminder Interval
-                        </label>
-                        <select
-                          className="w-full rounded-md border p-2.5 bg-white"
-                          value={settings.reminderInterval}
-                          onChange={(e) =>
-                            setSettings((prev) => ({
-                              ...prev,
-                              reminderInterval: e.target.value as
-                                | "daily"
-                                | "weekly"
-                                | "biweekly"
-                                | "monthly",
-                            }))
-                          }
-                        >
-                          <option value="daily">Daily</option>
-                          <option value="weekly">Weekly</option>
-                          <option value="biweekly">Bi-weekly</option>
-                          <option value="monthly">Monthly</option>
-                        </select>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* Save Button - Fixed at bottom on mobile */}
-              <div
-                className={cn(
-                  "mt-6 md:mt-8",
-                  "sticky bottom-0 left-0 right-0",
-                  "bg-white p-4 md:p-0",
-                  "border-t md:border-0 border-gray-100"
-                )}
-              >
-                <Button
-                  className="w-full h-11"
-                  onClick={handleSaveSettings}
-                  disabled={loading}
-                >
-                  {loading ? "Saving..." : "Save Settings"}
-                </Button>
-              </div>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
-
-      {/* Preview Panel - Only show in create/upload mode */}
-      {viewMode !== "list" && (
-        <div className="hidden lg:block flex-1 bg-gray-50 p-6">
-          {/* Preview content */}
-        </div>
-      )}
 
       {/* Modals */}
       <InvoiceModal
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
-        recipientEmail={settings.recipientEmail}
-        settings={{
-          teamEmails: settings.teamEmails,
-          reminderCount: settings.reminderCount,
-          reminderInterval: settings.reminderInterval,
-        }}
+        recipientEmail=""
       />
 
-      {/* Add Modal */}
       <UploadInvoiceModal
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}

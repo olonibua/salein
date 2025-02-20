@@ -19,6 +19,10 @@ export function AddressFields({
   values,
   onChange,
 }: AddressFieldsProps) {
+  const handleAddressChange = (field: string, value: string) => {
+    onChange(`address.${field}`, value);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -32,24 +36,24 @@ export function AddressFields({
             <Input
               placeholder="Street"
               value={values.street || ""}
-              onChange={(e) => onChange("street", e.target.value)}
+              onChange={(e) => handleAddressChange("street", e.target.value)}
             />
           </div>
           <div className="grid grid-cols-3 gap-4">
             <Input
-              placeholder="State"
-              value={values.state || ""}
-              onChange={(e) => onChange("state", e.target.value)}
-            />
-            <Input
               placeholder="City"
               value={values.city || ""}
-              onChange={(e) => onChange("city", e.target.value)}
+              onChange={(e) => handleAddressChange("city", e.target.value)}
+            />
+            <Input
+              placeholder="State"
+              value={values.state || ""}
+              onChange={(e) => handleAddressChange("state", e.target.value)}
             />
             <Input
               placeholder="Postal code"
               value={values.postalCode || ""}
-              onChange={(e) => onChange("postalCode", e.target.value)}
+              onChange={(e) => handleAddressChange("postalCode", e.target.value)}
             />
           </div>
         </div>
