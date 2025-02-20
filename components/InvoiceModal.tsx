@@ -14,19 +14,24 @@ interface InvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   recipientEmail: string;
-  isUploadedInvoice: boolean;
-  // Remove reminderEnabled and mode if they're not being used
   settings?: {
     teamEmails: string[];
     reminderCount: number;
     reminderInterval: "daily" | "weekly" | "biweekly" | "monthly";
-    uploadedInvoiceDetails: {
+    uploadedInvoiceDetails?: {
       invoiceDate: string;
       dueDate: string;
       amount: number;
       invoiceName: string;
     };
   };
+}
+
+interface InvoiceDetails {
+  invoiceDate: string;
+  dueDate: string;
+  amount: number;
+  invoiceName: string;
 }
 
 const InvoiceModal = ({
@@ -95,25 +100,20 @@ const InvoiceModal = ({
   };
 
   const handleSendInvoice = async (
-    recipientEmail: string, 
+    recipientEmail: string,
     teamEmails: string[] = [],
-    uploadedDetails?: any
+    uploadedDetails?: InvoiceDetails
   ) => {
-    console.log('Received uploaded details:', uploadedDetails); // Debug log
-    console.log('Is sending:', isSending); // Debug log
-
     if (isSending) return;
     setIsSending(true);
 
     try {
-      const invoiceDetails = uploadedDetails || {
+      const invoiceDetails: InvoiceDetails = uploadedDetails || {
         invoiceDate: invoiceData.invoiceDate,
         dueDate: invoiceData.dueDate,
         amount: invoiceData.total,
         invoiceName: `Invoice #${invoiceData.invoiceNumber}`
       };
-
-      console.log('Final invoice details:', invoiceDetails); // Debug log
 
       const emailContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -135,7 +135,7 @@ const InvoiceModal = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to: recipientEmail,
-          teamEmails: teamEmails,
+          teamEmails,
           subject: `Invoice: ${invoiceDetails.invoiceName || 'New Invoice'}`,
           htmlContent: emailContent,
           pdfBuffer: Array.from(new Uint8Array(pdfBuffer)),
@@ -143,9 +143,8 @@ const InvoiceModal = ({
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
+        const data = await response.json();
         throw new Error(data.error || "Failed to send invoice");
       }
 
@@ -153,7 +152,7 @@ const InvoiceModal = ({
       onClose();
     } catch (error) {
       console.error("Error sending invoice:", error);
-      toast.error("Failed to send invoice");
+      toast.error(error instanceof Error ? error.message : "Failed to send invoice");
     } finally {
       setIsSending(false);
     }
