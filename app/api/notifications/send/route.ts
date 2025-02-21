@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     console.log("Attachment size:", pdfBuffer.length);
 
     const emailData: EmailData = {
-      from: "Salein <onboarding@resend.dev>",
+      from: "Salein <Salein@olonts.site>",
       to: [to],
       cc: teamEmails,
       subject,
