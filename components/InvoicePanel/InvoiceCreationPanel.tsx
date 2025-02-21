@@ -15,19 +15,14 @@ import {
   X,
   ChevronDown,
   Search,
-  Calendar,
-  Upload,
   ArrowRight,
-  Check,
-  ChevronsUpDown,
 } from "lucide-react";
 import { Switch } from "../ui/switch";
 import InvoiceModal from "../InvoiceModal";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Select, SelectTrigger,  SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
-import { InvoiceTemplate, invoiceTemplates, InvoiceData } from "@/types/invoice";
+import { invoiceTemplates, } from "@/types/invoice";
 import { motion, AnimatePresence } from "framer-motion";
 import { allCurrencies } from "@/types/currency";
 import { addDays } from "date-fns";
