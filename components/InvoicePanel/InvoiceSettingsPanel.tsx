@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import InvoiceCreationPanel from "./InvoiceCreationPanel";
 import Invoice from "../Invoice/Invoice";
 import UploadInvoiceModal from "../Invoice/UploadInvoiceModal";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 // interface TeamMember {
@@ -41,31 +40,31 @@ interface InvoiceRecord {
 const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
   // State with proper typing
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [_invoiceMode, setInvoiceMode] = useState<InvoiceMode>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [invoiceMode, setInvoiceMode] = useState<InvoiceMode>(null);
   const [invoiceRecords, setInvoiceRecords] = useState<InvoiceRecord[]>([]);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [countdowns, setCountdowns] = useState<{ [key: string]: string }>({});
 
-
   // Add useEffect to load invoices from localStorage
   useEffect(() => {
     const loadInvoices = () => {
       try {
-        const savedInvoices = localStorage.getItem('invoices');
+        const savedInvoices = localStorage.getItem("invoices");
         if (savedInvoices) {
           setInvoiceRecords(JSON.parse(savedInvoices));
         }
       } catch (error) {
-        console.error('Error loading invoices:', error);
+        console.error("Error loading invoices:", error);
       }
     };
 
     loadInvoices();
     // Add event listener for storage changes
-    window.addEventListener('storage', loadInvoices);
-    return () => window.removeEventListener('storage', loadInvoices);
+    window.addEventListener("storage", loadInvoices);
+    return () => window.removeEventListener("storage", loadInvoices);
   }, []);
 
   // Update countdowns every second
@@ -76,15 +75,15 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
         if (invoice.dueDate) {
           const dueDate = new Date(invoice.dueDate);
           const now = new Date();
-          
+
           // Ensure proper date comparison
           if (dueDate.getTime() > now.getTime()) {
-            newCountdowns[invoice.id] = formatDistanceToNow(dueDate, { 
+            newCountdowns[invoice.id] = formatDistanceToNow(dueDate, {
               addSuffix: true,
-              includeSeconds: true 
+              includeSeconds: true,
             });
           } else {
-            newCountdowns[invoice.id] = 'Overdue';
+            newCountdowns[invoice.id] = "Overdue";
           }
         }
       });
@@ -115,25 +114,31 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
   const handleDeleteInvoice = (id: string) => {
     try {
       // Get current invoices from localStorage
-      const savedInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+      const savedInvoices = JSON.parse(
+        localStorage.getItem("invoices") || "[]"
+      );
       // Filter out the deleted invoice
-      const updatedInvoices = savedInvoices.filter((invoice: InvoiceRecord) => invoice.id !== id);
+      const updatedInvoices = savedInvoices.filter(
+        (invoice: InvoiceRecord) => invoice.id !== id
+      );
       // Save back to localStorage
-      localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
+      localStorage.setItem("invoices", JSON.stringify(updatedInvoices));
       // Update state
       setInvoiceRecords(updatedInvoices);
-      
+
       toast.success("Invoice deleted successfully");
     } catch (error) {
-      console.error('Error deleting invoice:', error);
+      console.error("Error deleting invoice:", error);
       toast.error("Failed to delete invoice");
     }
   };
 
   return (
-    <div className={cn("flex w-full h-screen bg-gray-50", {
-      "opacity-50 transition-opacity duration-300": isTransitioning
-    })}>
+    <div
+      className={cn("flex w-full h-screen bg-gray-50", {
+        "opacity-50 transition-opacity duration-300": isTransitioning,
+      })}
+    >
       {/* Main Panel - Now wider */}
       <div className={cn("w-full h-screen border-r border-gray-200 bg-white")}>
         {/* Header */}
@@ -169,7 +174,9 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                     <div className="p-3 bg-blue-100 rounded-lg">
                       <Plus className="text-blue-600" size={24} />
                     </div>
-                    <h2 className="text-xl font-semibold">Create New Invoice</h2>
+                    <h2 className="text-xl font-semibold">
+                      Create New Invoice
+                    </h2>
                   </div>
                   <p className="text-gray-600">
                     Create a professional invoice using our template
@@ -206,14 +213,30 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due In</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Invoice
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Recipient
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Invoice Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Due Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Due In
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -230,13 +253,15 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              invoice.status === 'sent' 
-                                ? 'bg-green-100 text-green-800'
-                                : invoice.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}>
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${
+                                invoice.status === "sent"
+                                  ? "bg-green-100 text-green-800"
+                                  : invoice.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
                               {invoice.status}
                             </span>
                           </td>
@@ -244,24 +269,39 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                             £{(invoice.amount || 0).toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString('en-GB', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            }) : 'N/A'}
+                            {invoice.invoiceDate
+                              ? new Date(
+                                  invoice.invoiceDate
+                                ).toLocaleDateString("en-GB", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "N/A"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-GB', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            }) : 'N/A'}
+                            {invoice.dueDate
+                              ? new Date(invoice.dueDate).toLocaleDateString(
+                                  "en-GB",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  }
+                                )
+                              : "N/A"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`text-sm ${
-                              countdowns[invoice.id]?.toLowerCase().includes('ago') ? 'text-red-500' : 'text-gray-500'
-                            }`}>
-                              {countdowns[invoice.id] || 'N/A'}
+                            <span
+                              className={`text-sm ${
+                                countdowns[invoice.id]
+                                  ?.toLowerCase()
+                                  .includes("ago")
+                                  ? "text-red-500"
+                                  : "text-gray-500"
+                              }`}
+                            >
+                              {countdowns[invoice.id] || "N/A"}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-right">

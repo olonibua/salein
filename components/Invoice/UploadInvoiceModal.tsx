@@ -19,7 +19,8 @@ const UploadInvoiceModal = ({
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [recipientEmail, _setRecipientEmail] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [recipientEmail, setRecipientEmail] = useState("");
 
   if (!isOpen) return null;
 
@@ -65,7 +66,10 @@ const UploadInvoiceModal = ({
     setFile(file);
   };
 
-  const handleSendInvoice = async (recipientEmail: string, teamEmails: string[] = []) => {
+  const handleSendInvoice = async (
+    recipientEmail: string,
+    teamEmails: string[] = []
+  ) => {
     try {
       if (!file || !recipientEmail) {
         toast.error("File and recipient email are required");
@@ -89,7 +93,7 @@ const UploadInvoiceModal = ({
             <p>Please find the attached invoice.</p>
           `,
           pdfBuffer: fileArray,
-          fileName: file.name
+          fileName: file.name,
         }),
       });
 

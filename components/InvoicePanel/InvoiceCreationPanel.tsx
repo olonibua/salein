@@ -83,8 +83,12 @@ const InvoiceCreationPanel = ({
   } = useInvoice();
 
   // State with proper typing
-  const [activeTab, setActiveTab] = useState<"information" | "templates" | "new">("information");
-  const [accountType, setAccountType] = useState<"personal" | "business">("personal");
+  const [activeTab, setActiveTab] = useState<
+    "information" | "templates" | "new"
+  >("information");
+  const [accountType, setAccountType] = useState<"personal" | "business">(
+    "personal"
+  );
   const [showAddress, setShowAddress] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>(() => {
@@ -98,12 +102,15 @@ const InvoiceCreationPanel = ({
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [companies, setCompanies] = useState<CompanyDetails[]>([]);
-  const [savedPersonalDetails, setSavedPersonalDetails] = useState<SavedPersonalDetails[]>(() => {
-    const saved = localStorage.getItem('personalDetails');
+  const [savedPersonalDetails, setSavedPersonalDetails] = useState<
+    SavedPersonalDetails[]
+  >(() => {
+    const saved = localStorage.getItem("personalDetails");
     return saved ? JSON.parse(saved) : [];
   });
   const [hasStartedFilling, setHasStartedFilling] = useState(false);
-  const [isUploadedInvoice, _setIsUploadedInvoice] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isUploadedInvoice, setIsUploadedInvoice] = useState(false);
 
   // Type-safe handlers
   const handleFromDataChange = (field: string, value: string) => {
@@ -124,13 +131,13 @@ const InvoiceCreationPanel = ({
       );
     }
 
-    if (field.startsWith('address.')) {
-      const addressField = field.split('.')[1];
+    if (field.startsWith("address.")) {
+      const addressField = field.split(".")[1];
       updateFromData({
         address: {
           ...invoiceData.from.address,
-          [addressField]: value
-        }
+          [addressField]: value,
+        },
       });
     } else {
       updateFromData({ [field]: value });
@@ -143,12 +150,12 @@ const InvoiceCreationPanel = ({
     value: string | number | { label: string; value: string; symbol: string }
   ) => {
     const updatedItems = [...invoiceData.items];
-    
+
     if (field === "currency") {
       if (index === 0) {
-        const selectedCurrency = allCurrencies.find(c => c.value === value);
+        const selectedCurrency = allCurrencies.find((c) => c.value === value);
         if (selectedCurrency) {
-          updatedItems.forEach(item => {
+          updatedItems.forEach((item) => {
             item.currency = selectedCurrency;
           });
           updateInvoiceData({ currency: selectedCurrency });
@@ -160,7 +167,7 @@ const InvoiceCreationPanel = ({
         return;
       }
     } else {
-      const numValue = 
+      const numValue =
         field === "quantity" || field === "unitPrice"
           ? value === ""
             ? ""
@@ -248,7 +255,7 @@ const InvoiceCreationPanel = ({
       quantity: 1,
       unitPrice: "",
       total: 0,
-      currency: invoiceData.currency
+      currency: invoiceData.currency,
     };
     updateItems([...invoiceData.items, newItem]);
   };
@@ -364,8 +371,6 @@ const InvoiceCreationPanel = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
- 
-
   const handleNextToTemplates = () => {
     setActiveTab("templates");
   };
@@ -383,7 +388,7 @@ const InvoiceCreationPanel = ({
 
       const updatedDetails = [...savedPersonalDetails, newDetails];
       setSavedPersonalDetails(updatedDetails);
-      localStorage.setItem('personalDetails', JSON.stringify(updatedDetails));
+      localStorage.setItem("personalDetails", JSON.stringify(updatedDetails));
       toast.success("Personal details saved successfully");
     }
   };
@@ -405,7 +410,8 @@ const InvoiceCreationPanel = ({
         <div className="flex flex-col gap-1">
           <span className="font-medium">Local Storage Only</span>
           <span className="text-sm text-gray-600">
-            All your information is stored locally on your device, not on our servers
+            All your information is stored locally on your device, not on our
+            servers
           </span>
         </div>,
         {
@@ -414,8 +420,8 @@ const InvoiceCreationPanel = ({
           icon: "🔒",
           position: "bottom-right",
           style: {
-            animation: "slideUp 0.5s ease-out"
-          }
+            animation: "slideUp 0.5s ease-out",
+          },
         }
       );
     }, 1000);
@@ -424,21 +430,21 @@ const InvoiceCreationPanel = ({
   // Add tab content animations
   const tabContentVariants = {
     hidden: { opacity: 0, x: -20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       x: 0,
       transition: {
         duration: 0.3,
-        staggerChildren: 0.1
-      }
+        staggerChildren: 0.1,
+      },
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       x: 20,
       transition: {
-        duration: 0.2
-      }
-    }
+        duration: 0.2,
+      },
+    },
   };
 
   // const formatDisplayDate = (dateString: string) => {
@@ -457,10 +463,13 @@ const InvoiceCreationPanel = ({
   // };
 
   // Add date handling
-  const handleDateChange = (field: 'invoiceDate' | 'dueDate', value: string) => {
+  const handleDateChange = (
+    field: "invoiceDate" | "dueDate",
+    value: string
+  ) => {
     console.log(`Updating ${field} to:`, value); // Debug log
     updateInvoiceData({
-      [field]: value
+      [field]: value,
     });
   };
 
@@ -675,10 +684,10 @@ const InvoiceCreationPanel = ({
                               <div className="border-2 border-dashed rounded-lg p-4 text-center">
                                 <div className="w-20 h-20 bg-gray-100 rounded-lg mx-auto mb-2 flex items-center justify-center">
                                   <label className="cursor-pointer w-full h-full flex items-center justify-center">
-                                    <input 
-                                      type="file" 
-                                      accept="image/*" 
-                                      onChange={handleLogoUpload} 
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={handleLogoUpload}
                                       className="hidden"
                                     />
                                     <span className="text-sm text-gray-500">
@@ -706,7 +715,9 @@ const InvoiceCreationPanel = ({
                               onClick={() => handleSelectSavedDetails(details)}
                             >
                               <p className="font-medium">{details.name}</p>
-                              <p className="text-sm text-gray-600">{details.email}</p>
+                              <p className="text-sm text-gray-600">
+                                {details.email}
+                              </p>
                             </div>
                           ))}
                         </div>
@@ -759,7 +770,10 @@ const InvoiceCreationPanel = ({
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+                      whileHover={{
+                        scale: 1.02,
+                        transition: { duration: 0.2 },
+                      }}
                       whileTap={{ scale: 0.98 }}
                     >
                       <div className="border rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors">
@@ -769,12 +783,14 @@ const InvoiceCreationPanel = ({
                           </div>
                         </div>
                         <p className="text-sm font-medium">{template.name}</p>
-                        <p className="text-xs text-gray-500">{template.description}</p>
+                        <p className="text-xs text-gray-500">
+                          {template.description}
+                        </p>
                       </div>
                     </motion.div>
                   ))}
                 </motion.div>
-                
+
                 {/* Next button */}
                 <div className="mt-8 border-t pt-6">
                   <Button
@@ -855,7 +871,10 @@ const InvoiceCreationPanel = ({
                                   {customer.email}
                                 </p>
                               </div>
-                              <ChevronDown size={16} className="text-gray-400" />
+                              <ChevronDown
+                                size={16}
+                                className="text-gray-400"
+                              />
                             </div>
                           ))}
                         </div>
@@ -881,7 +900,9 @@ const InvoiceCreationPanel = ({
                           <div className="flex gap-2">
                             <button
                               className="text-sm text-blue-500"
-                              onClick={() => handleEditCustomer(selectedCustomer)}
+                              onClick={() =>
+                                handleEditCustomer(selectedCustomer)
+                              }
                             >
                               <Edit2 size={16} />
                             </button>
@@ -899,12 +920,16 @@ const InvoiceCreationPanel = ({
                         <Input
                           placeholder="Customer name"
                           value={invoiceData.to.name}
-                          onChange={(e) => updateToData({ name: e.target.value })}
+                          onChange={(e) =>
+                            updateToData({ name: e.target.value })
+                          }
                         />
                         <Input
                           placeholder="Customer email"
                           value={invoiceData.to.email}
-                          onChange={(e) => updateToData({ email: e.target.value })}
+                          onChange={(e) =>
+                            updateToData({ email: e.target.value })
+                          }
                         />
                         <AddressFields
                           showAddress={true}
@@ -943,12 +968,16 @@ const InvoiceCreationPanel = ({
                         <Input
                           placeholder="Customer name"
                           value={invoiceData.to.name}
-                          onChange={(e) => updateToData({ name: e.target.value })}
+                          onChange={(e) =>
+                            updateToData({ name: e.target.value })
+                          }
                         />
                         <Input
                           placeholder="Customer email"
                           value={invoiceData.to.email}
-                          onChange={(e) => updateToData({ email: e.target.value })}
+                          onChange={(e) =>
+                            updateToData({ email: e.target.value })
+                          }
                         />
 
                         {/* Recipient Address Fields */}
@@ -980,8 +1009,7 @@ const InvoiceCreationPanel = ({
                   </div>
 
                   {/* Remove Company Details section and replace with simple input fields */}
-                 
-                  
+
                   {/* Invoice Details - Adjusted for mobile */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
@@ -989,7 +1017,9 @@ const InvoiceCreationPanel = ({
                       <Input
                         type="date"
                         value={invoiceData.invoiceDate}
-                        onChange={(e) => handleDateChange('invoiceDate', e.target.value)}
+                        onChange={(e) =>
+                          handleDateChange("invoiceDate", e.target.value)
+                        }
                         className="w-full"
                       />
                     </div>
@@ -998,7 +1028,9 @@ const InvoiceCreationPanel = ({
                       <Input
                         type="date"
                         value={invoiceData.dueDate}
-                        onChange={(e) => handleDateChange('dueDate', e.target.value)}
+                        onChange={(e) =>
+                          handleDateChange("dueDate", e.target.value)
+                        }
                         className="w-full"
                       />
                     </div>
@@ -1006,14 +1038,12 @@ const InvoiceCreationPanel = ({
 
                   {/* Items Table - Adjusted for mobile */}
                   <AnimatePresence>
-                    <motion.div 
+                    <motion.div
                       className="space-y-2"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
                     >
-                     
-
                       <div className="grid grid-cols-12 gap-2 md:gap-4 items-center mb-2 text-xs md:text-sm">
                         <div className="col-span-4 md:col-span-5">
                           <span className="font-medium">Item</span>
@@ -1040,11 +1070,18 @@ const InvoiceCreationPanel = ({
                           className="grid grid-cols-12 gap-2 md:gap-4 items-center bg-gray-50 rounded-lg p-3"
                         >
                           <div className="col-span-4 md:col-span-5">
-                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <motion.div
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
                               <Input
                                 value={item.name}
                                 onChange={(e) =>
-                                  handleItemUpdate(index, "name", e.target.value)
+                                  handleItemUpdate(
+                                    index,
+                                    "name",
+                                    e.target.value
+                                  )
                                 }
                                 placeholder="Item name"
                                 className="bg-white text-xs md:text-sm"
@@ -1052,13 +1089,20 @@ const InvoiceCreationPanel = ({
                             </motion.div>
                           </div>
                           <div className="col-span-2 md:col-span-2">
-                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <motion.div
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
                               <Input
                                 type="number"
                                 min="1"
                                 value={item.quantity}
                                 onChange={(e) =>
-                                  handleItemUpdate(index, "quantity", e.target.value)
+                                  handleItemUpdate(
+                                    index,
+                                    "quantity",
+                                    e.target.value
+                                  )
                                 }
                                 placeholder="0"
                                 className="bg-white text-right text-xs md:text-sm"
@@ -1066,12 +1110,18 @@ const InvoiceCreationPanel = ({
                             </motion.div>
                           </div>
                           <div className="col-span-3 md:col-span-2">
-                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <motion.div
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
                               <Input
                                 type="text"
                                 value={item.unitPrice}
                                 onChange={(e) => {
-                                  const value = e.target.value.replace(/[^0-9.]/g, "");
+                                  const value = e.target.value.replace(
+                                    /[^0-9.]/g,
+                                    ""
+                                  );
                                   handleItemUpdate(index, "unitPrice", value);
                                 }}
                                 placeholder="0.00"
@@ -1081,8 +1131,13 @@ const InvoiceCreationPanel = ({
                           </div>
                           <div className="col-span-2 md:col-span-2">
                             <Select
-                              value={item.currency?.value || invoiceData.currency.value}
-                              onValueChange={(value) => handleItemUpdate(index, "currency", value)}
+                              value={
+                                item.currency?.value ||
+                                invoiceData.currency.value
+                              }
+                              onValueChange={(value) =>
+                                handleItemUpdate(index, "currency", value)
+                              }
                               disabled={index !== 0}
                             >
                               <SelectTrigger className="bg-white h-9 text-xs md:text-sm">
@@ -1090,8 +1145,8 @@ const InvoiceCreationPanel = ({
                               </SelectTrigger>
                               <SelectContent>
                                 {allCurrencies.map((currency) => (
-                                  <SelectItem 
-                                    key={currency.value} 
+                                  <SelectItem
+                                    key={currency.value}
                                     value={currency.value}
                                     className="text-xs md:text-sm"
                                   >
@@ -1101,7 +1156,7 @@ const InvoiceCreationPanel = ({
                               </SelectContent>
                             </Select>
                           </div>
-                          <motion.div 
+                          <motion.div
                             className="col-span-1 md:col-span-1 flex justify-end"
                             whileHover={{ scale: 1.1, rotate: 90 }}
                             whileTap={{ scale: 0.9 }}
@@ -1141,7 +1196,10 @@ const InvoiceCreationPanel = ({
                               : ""
                           }
                           onChange={(e) => {
-                            const value = e.target.value.replace(/[^0-9.]/g, "");
+                            const value = e.target.value.replace(
+                              /[^0-9.]/g,
+                              ""
+                            );
                             handleTaxRateChange(value);
                           }}
                         />

@@ -15,10 +15,15 @@ import { InvoiceProvider } from "@/contexts/InvoiceContext";
 //   { ssr: false }
 // );
 
-const InvoiceSettingsPanel = dynamic<{}>(
+interface InvoiceSettingsPanelProps {
+  onBack: () => void;
+}
+
+const InvoiceSettingsPanel = dynamic<InvoiceSettingsPanelProps>(
   () => import("@/components/InvoicePanel/InvoiceSettingsPanel"),
   { ssr: false }
 );
+
 
 const UploadInvoiceModal = dynamic<{
   isOpen: boolean;

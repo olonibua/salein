@@ -4,7 +4,8 @@ import { Slider } from "@/components/ui/slider";
 import { Minus, Plus } from "lucide-react";
 import { useInvoice } from "@/contexts/InvoiceContext";
 import { invoiceTemplates } from "./templates";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
+import Image from "next/image";
 
 interface InvoiceProps {
   selectedTemplate?: string;
@@ -137,7 +138,7 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
                   <div className="flex-1">
                     {logo ? (
                       <div className="h-20 relative">
-                        <img 
+                        <Image
                           src={logo} 
                           alt="Company Logo" 
                           className="h-full w-auto object-contain"
