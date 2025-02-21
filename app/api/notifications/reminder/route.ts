@@ -18,8 +18,8 @@ interface EmailData {
 
 interface ResendResponse {
   data?: {
-    id: string;
-  };
+    id?: string; // Made `id` optional to handle `null` cases
+  } | null;
   error?: {
     message: string;
   };
@@ -38,13 +38,8 @@ export async function POST(req: Request) {
   const resend = new Resend(resendApiKey);
 
   try {
-    const {
-      to,
-      // subject,
-      invoiceId,
-      dueDate,
-      amount,
-    }: ReminderRequestBody = await req.json();
+    const { to, invoiceId, dueDate, amount }: ReminderRequestBody =
+      await req.json();
 
     const emailData: EmailData = {
       from: "Salein <invoices@olonts.site>",
@@ -58,7 +53,9 @@ export async function POST(req: Request) {
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
             <p><strong>Invoice ID:</strong> ${invoiceId}</p>
             <p><strong>Amount Due:</strong> ${amount}</p>
-            <p><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>
+            <p><strong>Due Date:</strong> ${new Date(
+              dueDate
+            ).toLocaleDateString()}</p>
           </div>
           
           <p>Please ensure your payment is made before the due date to avoid any late fees.</p>
@@ -72,8 +69,18 @@ export async function POST(req: Request) {
       `,
     };
 
-    const data: ResendResponse = await resend.emails.send(emailData);
-    return NextResponse.json({ success: true, id: data.data?.id });
+    // Sending the email
+    const data = await resend.emails.send(emailData);
+
+    // Check for null values in the response
+    if (!data?.data || !data.data.id) {
+      return NextResponse.json(
+        { error: "Failed to send email" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, id: data.data.id });
   } catch (error: unknown) {
     const err = error as Error;
     console.error("Reminder email error:", err);

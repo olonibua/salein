@@ -22,15 +22,6 @@ interface RequestBody {
   fileName?: string;
 }
 
-interface ResendResponse {
-  data?: {
-    id: string;
-  };
-  error?: {
-    message: string;
-  };
-}
-
 export async function POST(req: Request) {
   const resendApiKey = process.env.RESEND_API_KEY;
 
@@ -78,32 +69,33 @@ export async function POST(req: Request) {
       ],
     };
 
-    console.log("Email data:", { ...emailData, attachments: 'PDF Buffer' });
+    console.log("Email data:", { ...emailData, attachments: "PDF Buffer" });
 
     try {
-      const data: ResendResponse = await resend.emails.send(emailData);
-      console.log("Resend API Response:", data);
+      const response = await resend.emails.send(emailData);
 
-      if (data?.error) {
-        throw new Error(`Resend API Error: ${data.error.message}`);
+      console.log("Resend API Response:", response);
+
+      if (!response || !response.data || !response.data.id) {
+        throw new Error("Resend API did not return a valid ID.");
       }
 
-      return NextResponse.json({ 
-        success: true, 
-        id: data?.data?.id || 'sent' 
-      });
+      return NextResponse.json({ success: true, id: response.data.id });
     } catch (resendError: unknown) {
       const error = resendError as Error;
       console.error("Resend API Error:", error);
-      throw new Error(error?.message || "Failed to send via Resend API");
+      return NextResponse.json(
+        { error: "Failed to send via Resend API", details: error.message },
+        { status: 500 }
+      );
     }
   } catch (error: unknown) {
     const err = error as Error;
     console.error("Detailed error:", err);
     return NextResponse.json(
-      { 
-        error: "Failed to send email", 
-        details: err?.message || "Unknown error occurred"
+      {
+        error: "Failed to send email",
+        details: err?.message || "Unknown error occurred",
       },
       { status: 500 }
     );
