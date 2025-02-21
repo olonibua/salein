@@ -59,7 +59,7 @@ interface CompanyDetails {
   website?: string;
 }
 
-interface SavedPersonalDetails extends CompanyDetails {}
+type SavedPersonalDetails = CompanyDetails;
 
 interface ItemUpdate {
   name?: string;
@@ -70,7 +70,7 @@ interface ItemUpdate {
 }
 
 const InvoiceCreationPanel = ({
-  onUpload,
+  // onUpload,
   onCreateInvoice,
 }: InvoiceCreationPanelProps) => {
   const {
@@ -87,7 +87,6 @@ const InvoiceCreationPanel = ({
   const [accountType, setAccountType] = useState<"personal" | "business">("personal");
   const [showAddress, setShowAddress] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
-  const [uploadedLogo, setUploadedLogo] = useState<string | null>(null);
   const [customers, setCustomers] = useState<Customer[]>(() => {
     const saved = localStorage.getItem("customers");
     return saved ? JSON.parse(saved) : [];
@@ -99,16 +98,12 @@ const InvoiceCreationPanel = ({
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [companies, setCompanies] = useState<CompanyDetails[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [editingCompany, setEditingCompany] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [savedPersonalDetails, setSavedPersonalDetails] = useState<SavedPersonalDetails[]>(() => {
     const saved = localStorage.getItem('personalDetails');
     return saved ? JSON.parse(saved) : [];
   });
-  const [open, setOpen] = useState(false);
   const [hasStartedFilling, setHasStartedFilling] = useState(false);
-  const [isUploadedInvoice, setIsUploadedInvoice] = useState(false);
+  const [isUploadedInvoice, _setIsUploadedInvoice] = useState(false);
 
   // Type-safe handlers
   const handleFromDataChange = (field: string, value: string) => {
@@ -369,25 +364,7 @@ const InvoiceCreationPanel = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleAddNewCompany = () => {
-    if (invoiceData.from.name && invoiceData.from.email) {
-      const newCompany: CompanyDetails = {
-        id: Date.now().toString(),
-        name: invoiceData.from.name,
-        email: invoiceData.from.email,
-        address: invoiceData.from.address,
-        phone: invoiceData.from.phone,
-        website: invoiceData.website,
-      };
-
-      const updatedCompanies = [...companies, newCompany];
-      setCompanies(updatedCompanies);
-      localStorage.setItem("companies", JSON.stringify(updatedCompanies));
-
-      setSelectedCompany(newCompany.id);
-      toast.success("Company details saved successfully");
-    }
-  };
+ 
 
   const handleNextToTemplates = () => {
     setActiveTab("templates");
@@ -411,7 +388,7 @@ const InvoiceCreationPanel = ({
     }
   };
 
-  const handleSelectSavedDetails = (details: any) => {
+  const handleSelectSavedDetails = (details: CompanyDetails) => {
     updateFromData({
       name: details.name,
       email: details.email,
@@ -464,20 +441,20 @@ const InvoiceCreationPanel = ({
     }
   };
 
-  const formatDisplayDate = (dateString: string) => {
-    if (!dateString || dateString === "Invalid Date") return "";
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "";
-      return date.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-    } catch {
-      return "";
-    }
-  };
+  // const formatDisplayDate = (dateString: string) => {
+  //   if (!dateString || dateString === "Invalid Date") return "";
+  //   try {
+  //     const date = new Date(dateString);
+  //     if (isNaN(date.getTime())) return "";
+  //     return date.toLocaleDateString("en-GB", {
+  //       day: "2-digit",
+  //       month: "2-digit",
+  //       year: "numeric",
+  //     });
+  //   } catch {
+  //     return "";
+  //   }
+  // };
 
   // Add date handling
   const handleDateChange = (field: 'invoiceDate' | 'dueDate', value: string) => {
@@ -488,11 +465,11 @@ const InvoiceCreationPanel = ({
   };
 
   // When file is uploaded
-  const handleFileUpload = async (file: File) => {
-    // ... existing upload logic ...
-    setIsUploadedInvoice(true);
-    setShowInvoiceModal(true);
-  };
+  // const handleFileUpload = async (file: File) => {
+  //   // ... existing upload logic ...
+  //   setIsUploadedInvoice(true);
+  //   setShowInvoiceModal(true);
+  // };
 
   return (
     <>

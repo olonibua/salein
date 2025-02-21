@@ -6,9 +6,8 @@ import html2pdf from "html2pdf.js";
 import { toast } from "sonner";
 import Invoice from "./Invoice/Invoice";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import InvoiceSettingsModal from "./InvoiceSettingsModal";
-import { QRCodeSVG } from "qrcode.react";
 
 interface InvoiceModalProps {
   isOpen: boolean;
@@ -38,9 +37,8 @@ const InvoiceModal = ({
   isOpen,
   onClose,
   recipientEmail,
-  settings,
+  // settings,
 }: InvoiceModalProps) => {
-  const router = useRouter();
   const [isSending, setIsSending] = useState(false);
   const { invoiceData } = useInvoice();
   const [showSettings, setShowSettings] = useState(false);
@@ -59,7 +57,7 @@ const InvoiceModal = ({
   };
 
   const handleGetQRCode = () => {
-    setShowQR(!showQR);
+    // setShowQR(!showQR);
   };
 
   const handleDownloadPDF = () => {

@@ -59,14 +59,7 @@ interface InvoiceRecord {
   dueDate: string;
 }
 
-interface ReminderRecord {
-  invoiceId: string;
-  recipientEmail: string;
-  dueDate: string;
-  amount: number;
-  sendDate: string;
-  status: ReminderStatus;
-}
+
 
 const InvoiceSettingsModal = ({
   isOpen,

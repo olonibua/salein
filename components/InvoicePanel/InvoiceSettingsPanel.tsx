@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowLeft, Plus, Upload, FileText, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Upload, FileText, Trash2 } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import { cn } from "@/lib/utils";
 import InvoiceCreationPanel from "./InvoiceCreationPanel";
@@ -38,18 +38,16 @@ interface InvoiceRecord {
   dueDate: string;
 }
 
-const InvoiceSettingsPanel = ({ onBack }: InvoiceSettingsPanelProps) => {
+const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
   // State with proper typing
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [invoiceMode, setInvoiceMode] = useState<InvoiceMode>(null);
+  const [_invoiceMode, setInvoiceMode] = useState<InvoiceMode>(null);
   const [invoiceRecords, setInvoiceRecords] = useState<InvoiceRecord[]>([]);
-  const [loading, setLoading] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [countdowns, setCountdowns] = useState<{ [key: string]: string }>({});
 
-  const router = useRouter();
 
   // Add useEffect to load invoices from localStorage
   useEffect(() => {

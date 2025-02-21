@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   try {
     const {
       to,
-      subject,
+      // subject,
       invoiceId,
       dueDate,
       amount,

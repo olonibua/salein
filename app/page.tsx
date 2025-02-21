@@ -5,15 +5,15 @@ import dynamic from "next/dynamic";
 import { InvoiceProvider } from "@/contexts/InvoiceContext";
 
 // Dynamic imports with proper typing
-const Invoice = dynamic<{}>(
-  () => import("@/components/Invoice/Invoice"),
-  { ssr: false }
-);
+// const Invoice = dynamic<{}>(
+//   () => import("@/components/Invoice/Invoice"),
+//   { ssr: false }
+// );
 
-const InvoiceCreationPanel = dynamic<{}>(
-  () => import("@/components/InvoicePanel/InvoiceCreationPanel"),
-  { ssr: false }
-);
+// const InvoiceCreationPanel = dynamic<{}>(
+//   () => import("@/components/InvoicePanel/InvoiceCreationPanel"),
+//   { ssr: false }
+// );
 
 const InvoiceSettingsPanel = dynamic<{}>(
   () => import("@/components/InvoicePanel/InvoiceSettingsPanel"),

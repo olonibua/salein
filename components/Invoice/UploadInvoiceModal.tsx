@@ -3,7 +3,6 @@ import { Upload, X, FileText, AlertCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import InvoiceSettingsModal from "../InvoiceSettingsModal";
 import { toast } from "sonner";
-import html2pdf from "html2pdf.js";
 
 interface UploadInvoiceModalProps {
   isOpen: boolean;
@@ -20,7 +19,7 @@ const UploadInvoiceModal = ({
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientEmail, _setRecipientEmail] = useState("");
 
   if (!isOpen) return null;
 
