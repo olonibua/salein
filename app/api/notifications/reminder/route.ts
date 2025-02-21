@@ -16,14 +16,6 @@ interface EmailData {
   html: string;
 }
 
-interface ResendResponse {
-  data?: {
-    id?: string; // Made `id` optional to handle `null` cases
-  } | null;
-  error?: {
-    message: string;
-  };
-}
 
 export async function POST(req: Request) {
   const resendApiKey = process.env.RESEND_API_KEY;

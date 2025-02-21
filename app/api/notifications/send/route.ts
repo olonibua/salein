@@ -69,12 +69,10 @@ export async function POST(req: Request) {
       ],
     };
 
-    console.log("Email data:", { ...emailData, attachments: "PDF Buffer" });
 
     try {
       const response = await resend.emails.send(emailData);
 
-      console.log("Resend API Response:", response);
 
       if (!response || !response.data || !response.data.id) {
         throw new Error("Resend API did not return a valid ID.");
