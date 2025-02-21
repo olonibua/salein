@@ -13,6 +13,7 @@ interface InvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   recipientEmail: string;
+  isUploadedInvoice?: boolean;
   settings?: {
     teamEmails: string[];
     reminderCount: number;
@@ -110,23 +111,53 @@ const InvoiceModal = ({
         invoiceDate: invoiceData.invoiceDate,
         dueDate: invoiceData.dueDate,
         amount: invoiceData.total,
-        invoiceName: `Invoice #${invoiceData.invoiceNumber}`
+        invoiceName: `Invoice #${invoiceData.invoiceNumber}`,
       };
 
       const emailContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h2>Invoice Details</h2>
           <div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
-            ${invoiceDetails.invoiceName ? `<p><strong>Invoice Name:</strong> ${invoiceDetails.invoiceName}</p>` : ''}
+            ${
+              invoiceDetails.invoiceName
+                ? `<p><strong>Invoice Name:</strong> ${invoiceDetails.invoiceName}</p>`
+                : ""
+            }
             <p><strong>Amount:</strong> ${invoiceDetails.amount}</p>
             <p><strong>Invoice Date:</strong> ${invoiceDetails.invoiceDate}</p>
             <p><strong>Due Date:</strong> ${invoiceDetails.dueDate}</p>
           </div>
           <p>Please find the attached invoice document.</p>
-          ${invoiceDetails.dueDate ? `<p><strong>Payment Due:</strong> ${invoiceDetails.dueDate}</p>` : ''}
+          ${
+            invoiceDetails.dueDate
+              ? `<p><strong>Payment Due:</strong> ${invoiceDetails.dueDate}</p>`
+              : ""
+          }
           <p>Payment reminders will be sent automatically.</p>
         </div>
       `;
+
+      // Convert invoice HTML to PDF
+      const invoiceElement = document.getElementById("invoice-content");
+      if (!invoiceElement) {
+        toast.error("Invoice content not found");
+        return;
+      }
+
+      const opt = {
+        margin: 1,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+      };
+
+      const pdfBlob = await html2pdf()
+        .set(opt)
+        .from(invoiceElement)
+        .outputPdf("blob");
+
+      // Convert Blob to ArrayBuffer
+      const pdfBuffer = await pdfBlob.arrayBuffer();
 
       const response = await fetch("/api/notifications/send", {
         method: "POST",
@@ -134,10 +165,10 @@ const InvoiceModal = ({
         body: JSON.stringify({
           to: recipientEmail,
           teamEmails,
-          subject: `Invoice: ${invoiceDetails.invoiceName || 'New Invoice'}`,
+          subject: `Invoice: ${invoiceDetails.invoiceName || "New Invoice"}`,
           htmlContent: emailContent,
           pdfBuffer: Array.from(new Uint8Array(pdfBuffer)),
-          fileName: `invoice-${Date.now()}.pdf`
+          fileName: `invoice-${Date.now()}.pdf`,
         }),
       });
 

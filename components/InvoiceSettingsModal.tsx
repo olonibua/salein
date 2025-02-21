@@ -141,7 +141,9 @@ const InvoiceSettingsModal = ({
         return;
       }
 
-      const uploadedDetails = isUploadedInvoice ? settings.uploadedInvoiceDetails : null;
+const uploadedDetails = isUploadedInvoice
+  ? settings.uploadedInvoiceDetails
+  : undefined;
 
       await onSendInvoice(
         settings.recipientEmail, 
