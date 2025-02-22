@@ -62,9 +62,16 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
     };
 
     loadInvoices();
-    // Add event listener for storage changes
+
+    // Create a custom event for invoice updates
+    const handleInvoiceUpdate = () => loadInvoices();
+    window.addEventListener("invoiceUpdated", handleInvoiceUpdate);
     window.addEventListener("storage", loadInvoices);
-    return () => window.removeEventListener("storage", loadInvoices);
+
+    return () => {
+      window.removeEventListener("invoiceUpdated", handleInvoiceUpdate);
+      window.removeEventListener("storage", loadInvoices);
+    };
   }, []);
 
   // Update countdowns every second
@@ -209,114 +216,135 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                   </Button>
                 </div>
 
-                <div className="border rounded-xl overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Invoice
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Recipient
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Amount
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Invoice Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Due Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Due In
-                        </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {invoiceRecords.map((invoice) => (
-                        <tr key={invoice.id}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm font-medium text-gray-900">
-                              {invoice.id}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-gray-500">
-                              {invoice.recipientEmail}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full ${
-                                invoice.status === "sent"
-                                  ? "bg-green-100 text-green-800"
-                                  : invoice.status === "pending"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {invoice.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            £{(invoice.amount || 0).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {invoice.invoiceDate
-                              ? new Date(
-                                  invoice.invoiceDate
-                                ).toLocaleDateString("en-GB", {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                })
-                              : "N/A"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {invoice.dueDate
-                              ? new Date(invoice.dueDate).toLocaleDateString(
-                                  "en-GB",
-                                  {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                  }
-                                )
-                              : "N/A"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`text-sm ${
-                                countdowns[invoice.id]
-                                  ?.toLowerCase()
-                                  .includes("ago")
-                                  ? "text-red-500"
-                                  : "text-gray-500"
-                              }`}
-                            >
-                              {countdowns[invoice.id] || "N/A"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                            <button
-                              onClick={() => handleDeleteInvoice(invoice.id)}
-                              className="text-red-500 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded-full"
-                              title="Delete Invoice"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="border rounded-xl">
+                  <div className="overflow-x-auto">
+                    <div className="inline-block min-w-full align-middle">
+                      <table className="min-w-full divide-y divide-gray-200 table-fixed">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                              #
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                              Invoice
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-44">
+                              Created At
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-44">
+                              Recipient
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                              Status
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                              Amount
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                              Invoice Date
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                              Due Date
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                              Due In
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {invoiceRecords.map((invoice, index) => (
+                            <tr key={invoice.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap w-16">
+                                <span className="text-sm font-medium text-gray-500">
+                                  {index + 1}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap w-32">
+                                <span className="text-sm font-medium text-gray-900">
+                                  {invoice.id}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap w-44">
+                                <span className="text-sm text-gray-500">
+                                  {invoice.createdAt
+                                    ? new Date(invoice.createdAt).toLocaleDateString("en-GB", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit"
+                                      })
+                                    : "N/A"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap w-44">
+                                <span className="text-sm text-gray-500">
+                                  {invoice.recipientEmail}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap w-24">
+                                <span
+                                  className={`px-2 py-1 text-xs rounded-full ${
+                                    invoice.status === "sent"
+                                      ? "bg-green-100 text-green-800"
+                                      : invoice.status === "pending"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
+                                >
+                                  {invoice.status}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 w-24">
+                                £{(invoice.amount || 0).toFixed(2)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 w-32">
+                                {invoice.invoiceDate
+                                  ? new Date(invoice.invoiceDate).toLocaleDateString("en-GB", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    })
+                                  : "N/A"}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 w-32">
+                                {invoice.dueDate
+                                  ? new Date(invoice.dueDate).toLocaleDateString("en-GB", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    })
+                                  : "N/A"}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap w-32">
+                                <span
+                                  className={`text-sm ${
+                                    countdowns[invoice.id]?.toLowerCase().includes("ago")
+                                      ? "text-red-500"
+                                      : "text-gray-500"
+                                  }`}
+                                >
+                                  {countdowns[invoice.id] || "N/A"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-right w-20">
+                                <button
+                                  onClick={() => handleDeleteInvoice(invoice.id)}
+                                  className="text-red-500 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded-full"
+                                  title="Delete Invoice"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               </div>
             </>

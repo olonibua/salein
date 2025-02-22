@@ -94,6 +94,9 @@ const InvoiceSettingsModal = ({
       const existingInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
       const updatedInvoices = [invoiceData, ...existingInvoices].slice(0, 50);
       localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
+      
+      // Dispatch custom event to notify of invoice update
+      window.dispatchEvent(new Event('invoiceUpdated'));
     } catch (error) {
       console.error('Error saving to localStorage:', error);
     }

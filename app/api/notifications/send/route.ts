@@ -57,6 +57,8 @@ export async function POST(req: Request) {
 
     const emailData: EmailData = {
       from: "Salein <onboarding@resend.dev>",
+      // from: "Salein <Saleing@olonts.site>",
+
       to: [to],
       cc: teamEmails,
       subject,

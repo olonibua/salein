@@ -172,16 +172,21 @@ const InvoiceModal = ({
         }),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to send invoice");
+        throw new Error(data.error || data.details || "Failed to send invoice");
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || data.details || "Failed to send invoice");
       }
 
       toast.success("Invoice sent successfully!");
       onClose();
     } catch (error) {
       console.error("Error sending invoice:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to send invoice");
+      throw error; // Re-throw the error so it's caught by toast.promise
     } finally {
       setIsSending(false);
     }
