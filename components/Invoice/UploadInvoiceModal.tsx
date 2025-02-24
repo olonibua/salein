@@ -4,6 +4,13 @@ import { Button } from "../ui/button";
 import InvoiceSettingsModal from "../InvoiceSettingsModal";
 import { toast } from "sonner";
 
+interface UploadedInvoiceDetails {
+  invoiceDate: string;
+  dueDate: string;
+  amount: number;
+  invoiceName: string;
+}
+
 interface UploadInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -68,9 +75,17 @@ const UploadInvoiceModal = ({
 
   const handleSendInvoice = async (
     recipientEmail: string,
-    teamEmails: string[] = []
+    teamEmails: string[] = [],
+    uploadedInvoiceDetails?: UploadedInvoiceDetails
   ) => {
     try {
+      console.log('Sending invoice with details:', {
+        recipientEmail,
+        teamEmails,
+        uploadedInvoiceDetails,
+        fileName: file?.name
+      });
+
       if (!file || !recipientEmail) {
         toast.error("File and recipient email are required");
         return;
@@ -78,6 +93,18 @@ const UploadInvoiceModal = ({
 
       const fileBuffer = await file.arrayBuffer();
       const fileArray = Array.from(new Uint8Array(fileBuffer));
+
+      // Format amount and date for display
+      const formattedAmount = uploadedInvoiceDetails?.amount 
+        ? new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD'
+          }).format(uploadedInvoiceDetails.amount)
+        : 'N/A';
+
+      const formattedDueDate = uploadedInvoiceDetails?.dueDate
+        ? new Date(uploadedInvoiceDetails.dueDate).toLocaleDateString()
+        : 'N/A';
 
       const response = await fetch("/api/notifications/send", {
         method: "POST",
@@ -87,15 +114,43 @@ const UploadInvoiceModal = ({
         body: JSON.stringify({
           to: recipientEmail,
           teamEmails: teamEmails,
-          subject: `Invoice: ${file.name}`,
+          subject: `Invoice: ${uploadedInvoiceDetails?.invoiceName || file.name}`,
           htmlContent: `
-            <h1>Invoice</h1>
-            <p>Please find the attached invoice.</p>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #333;">Invoice Details</h2>
+              
+              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Invoice Name:</strong> ${uploadedInvoiceDetails?.invoiceName || file.name}</p>
+                ${uploadedInvoiceDetails?.amount ? `<p><strong>Amount Due:</strong> ${formattedAmount}</p>` : ''}
+                ${uploadedInvoiceDetails?.dueDate ? `<p><strong>Due Date:</strong> ${formattedDueDate}</p>` : ''}
+              </div>
+              
+              <p>Please find the attached invoice document for your records.</p>
+              
+              ${
+                uploadedInvoiceDetails?.dueDate
+                  ? `
+                <p style="color: #666;">
+                  <strong>Note:</strong> Payment is due by ${formattedDueDate}. 
+                  Payment reminders will be sent automatically.
+                </p>
+              `
+                  : ""
+              }
+              
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <p style="color: #666; font-size: 14px;">
+                  If you have any questions, please don't hesitate to reach out.
+                </p>
+              </div>
+            </div>
           `,
           pdfBuffer: fileArray,
           fileName: file.name,
         }),
       });
+
+      console.log('API Response:', await response.json());
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -196,6 +251,12 @@ const UploadInvoiceModal = ({
         onSendInvoice={handleSendInvoice}
         recipientEmail={recipientEmail}
         isUploadedInvoice={true}
+        uploadedInvoiceDetails={{
+          invoiceDate: new Date().toISOString().split('T')[0],
+          dueDate: '',
+          amount: 0,
+          invoiceName: file?.name || ''
+        }}
       />
     </>
   );

@@ -13,19 +13,23 @@ import { reminderService } from '@/services/appwrite/reminderService';
 type ReminderInterval = "daily" | "weekly" | "biweekly" | "monthly";
 type InvoiceStatus = "sent" | "pending" | "failed";
 
+interface InvoiceDetails {
+  invoiceDate: string;
+  dueDate: string;
+  amount: number;
+  invoiceName: string;
+}
+
 interface InvoiceSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSendInvoice: (
-    recipientEmail: string, 
-    teamEmails: string[], 
-    uploadedInvoiceDetails?: UploadedInvoiceDetails
-  ) => Promise<void>;
+  onSendInvoice: (recipientEmail: string, teamEmails: string[], uploadedDetails?: InvoiceDetails) => Promise<void>;
   recipientEmail: string;
   invoiceDate?: string;
   dueDate?: string;
   amount?: number;
   isUploadedInvoice?: boolean;
+  uploadedInvoiceDetails?: InvoiceDetails;
 }
 
 interface UploadedInvoiceDetails {
@@ -66,10 +70,8 @@ const InvoiceSettingsModal = ({
   onClose,
   onSendInvoice,
   recipientEmail,
-  invoiceDate,
-  dueDate,
-  amount,
-  isUploadedInvoice = false
+  isUploadedInvoice = false,
+  uploadedInvoiceDetails
 }: InvoiceSettingsModalProps) => {
   const [settings, setSettings] = useState<InvoiceSettings>({
     recipientEmail,
@@ -78,10 +80,10 @@ const InvoiceSettingsModal = ({
     reminderInterval: "weekly",
     reminderCount: 3,
     reminderTime: "09:00",
-    uploadedInvoiceDetails: {
-      invoiceDate: invoiceDate || new Date().toISOString().split('T')[0],
-      dueDate: dueDate || addDays(new Date(), 30).toISOString().split('T')[0],
-      amount: amount || 0,
+    uploadedInvoiceDetails: uploadedInvoiceDetails || {
+      invoiceDate: new Date().toISOString().split('T')[0],
+      dueDate: addDays(new Date(), 30).toISOString().split('T')[0],
+      amount: 0,
       invoiceName: ""
     }
   });
@@ -153,7 +155,7 @@ const InvoiceSettingsModal = ({
         invoiceId: invoiceRecord.id,
         recipientEmail: invoiceRecord.recipientEmail,
         dueDate: invoiceRecord.dueDate,
-        amount: isUploadedInvoice ? settings.uploadedInvoiceDetails.amount : (amount || 0),
+        amount: isUploadedInvoice ? settings.uploadedInvoiceDetails.amount : (uploadedInvoiceDetails?.amount || 0),
         sendDate: reminderDate.toISOString()
       });
 
@@ -176,7 +178,7 @@ const InvoiceSettingsModal = ({
 
 const uploadedDetails = isUploadedInvoice
   ? settings.uploadedInvoiceDetails
-  : undefined;
+  : uploadedInvoiceDetails;
 
       await onSendInvoice(
         settings.recipientEmail, 
@@ -189,7 +191,7 @@ const uploadedDetails = isUploadedInvoice
         recipientEmail: settings.recipientEmail,
         status: "sent",
         createdAt: new Date().toISOString(),
-        amount: isUploadedInvoice ? settings.uploadedInvoiceDetails.amount : (amount || 0),
+        amount: isUploadedInvoice ? settings.uploadedInvoiceDetails.amount : (uploadedInvoiceDetails?.amount || 0),
         teamEmails: settings.teamEmails,
         reminderEnabled: settings.reminderEnabled,
         reminderInterval: settings.reminderInterval,
