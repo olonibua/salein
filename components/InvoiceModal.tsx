@@ -1,5 +1,5 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Copy, QrCode, FileDown, Upload, FileText, X } from "lucide-react";
+import { FileDown, Upload, FileText, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { useInvoice } from "@/contexts/InvoiceContext";
 import html2pdf from "html2pdf.js";

@@ -150,51 +150,51 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
     }
   };
 
-  const handleSendInvoice = async (
-    recipientEmail: string,
-    teamEmails: string[] = [],
-    uploadedDetails?: InvoiceDetails
-  ) => {
-    let status: "sent" | "pending" | "failed" = "pending";
+  // const handleSendInvoice = async (
+  //   recipientEmail: string,
+  //   teamEmails: string[] = [],
+  //   uploadedDetails?: InvoiceDetails
+  // ) => {
+  //   let status: "sent" | "pending" | "failed" = "pending";
     
-    try {
-      // ... existing send logic ...
+  //   try {
+  //     // ... existing send logic ...
       
-      const response = await fetch("/api/notifications/send", {
-        // ... existing request config ...
-      });
+  //     const response = await fetch("/api/notifications/send", {
+  //       // ... existing request config ...
+  //     });
 
-      if (!response.ok) {
-        status = "failed";
-        throw new Error("Failed to send invoice");
-      }
+  //     if (!response.ok) {
+  //       status = "failed";
+  //       throw new Error("Failed to send invoice");
+  //     }
 
-      status = "sent";
-      toast.success("Invoice sent successfully");
-    } catch (error) {
-      status = "failed";
-      console.error("Error sending invoice:", error);
-      toast.error("Failed to send invoice");
-    }
+  //     status = "sent";
+  //     toast.success("Invoice sent successfully");
+  //   } catch (error) {
+  //     status = "failed";
+  //     console.error("Error sending invoice:", error);
+  //     toast.error("Failed to send invoice");
+  //   }
 
-    // Create invoice record with proper status
-    const invoiceRecord: InvoiceRecord = {
-      id: `INV-${Date.now()}`,
-      recipientEmail,
-      status,
-      createdAt: new Date().toISOString(),
-      amount: uploadedDetails?.amount || 0,
-      teamEmails,
-      reminderEnabled: false,
-      reminderInterval: "weekly",
-      reminderCount: 3,
-      invoiceDate: uploadedDetails?.invoiceDate || new Date().toISOString(),
-      dueDate: uploadedDetails?.dueDate || new Date().toISOString()
-    };
+  //   // Create invoice record with proper status
+  //   const invoiceRecord: InvoiceRecord = {
+  //     id: `INV-${Date.now()}`,
+  //     recipientEmail,
+  //     status,
+  //     createdAt: new Date().toISOString(),
+  //     amount: uploadedDetails?.amount || 0,
+  //     teamEmails,
+  //     reminderEnabled: false,
+  //     reminderInterval: "weekly",
+  //     reminderCount: 3,
+  //     invoiceDate: uploadedDetails?.invoiceDate || new Date().toISOString(),
+  //     dueDate: uploadedDetails?.dueDate || new Date().toISOString()
+  //   };
 
-    // Save to localStorage with the correct status
-    saveInvoiceToStorage(invoiceRecord);
-  };
+  //   // Save to localStorage with the correct status
+  //   saveInvoiceToStorage(invoiceRecord);
+  // };
 
   const saveInvoiceToStorage = (invoiceData: InvoiceRecord) => {
     try {
