@@ -21,14 +21,7 @@ const CONFIG = {
 } as const;
 
 // Add this to debug environment variables
-console.log('Reminder Service Config:', {
-  databaseId: CONFIG.databaseId,
-  collectionId: CONFIG.collectionId,
-  envVars: {
-    database: process.env.NEXT_PUBLIC_APPWRITE_INVOICESDB_ID,
-    collection: process.env.NEXT_PUBLIC_APPWRITE_INVOICESCOLLECTION_ID
-  }
-});
+
 
 const validateConfig = () => {
   if (!CONFIG.databaseId || !CONFIG.collectionId) {
@@ -56,7 +49,6 @@ export const createReminder = async (reminder: ReminderInput) => {
 export const getDueReminders = async () => {
   validateConfig();
   const now = new Date().toISOString();
-  console.log('Checking reminders at:', now);
   
   const reminders = await databases.listDocuments(
     CONFIG.databaseId,
@@ -68,7 +60,6 @@ export const getDueReminders = async () => {
     ]
   );
 
-  console.log('Found reminders:', reminders.documents);
   return reminders;
 };
 

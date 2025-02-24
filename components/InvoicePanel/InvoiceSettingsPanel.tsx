@@ -9,6 +9,7 @@ import InvoiceCreationPanel from "./InvoiceCreationPanel";
 import Invoice from "../Invoice/Invoice";
 import UploadInvoiceModal from "../Invoice/UploadInvoiceModal";
 import { toast } from "sonner";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 // interface TeamMember {
 //   email: string;
@@ -38,6 +39,8 @@ interface InvoiceRecord {
 }
 
 const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  
   // State with proper typing
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -152,16 +155,23 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
         <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
           <div className="p-6 flex items-center justify-between">
             <h1 className="text-2xl font-semibold">Invoice Dashboard</h1>
-            {viewMode !== "list" && (
+            {(viewMode !== "list" || isMobile) && (
               <Button
                 variant="ghost"
                 onClick={() => {
                   setViewMode("list");
                   setInvoiceMode(null);
                 }}
+                className="flex items-center"
               >
-                <ArrowLeft className="mr-2" size={16} />
-                Back to Dashboard
+                {!isMobile ? (
+                  <>
+                    <ArrowLeft className="mr-2" size={16} />
+                    Back to Dashboard
+                  </>
+                ) : (
+                  ""
+                )}
               </Button>
             )}
           </div>
@@ -228,7 +238,7 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                               Invoice
                             </th>
-                            
+
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-44">
                               Recipient
                             </th>
@@ -265,7 +275,7 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                                   {invoice.id}
                                 </span>
                               </td>
-                              
+
                               <td className="px-6 py-4 whitespace-nowrap w-44">
                                 <span className="text-sm text-gray-500">
                                   {invoice.recipientEmail}
@@ -288,19 +298,23 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                                 £{(invoice.amount || 0).toFixed(2)}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 w-32">
-                              {invoice.createdAt
-                                    ? new Date(invoice.createdAt).toLocaleDateString("en-GB", {
-                                        day: "2-digit",
-                                        month: "short",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit"
-                                      })
-                                    : "N/A"}
+                                {invoice.createdAt
+                                  ? new Date(
+                                      invoice.createdAt
+                                    ).toLocaleDateString("en-GB", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : "N/A"}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 w-32">
                                 {invoice.dueDate
-                                  ? new Date(invoice.dueDate).toLocaleDateString("en-GB", {
+                                  ? new Date(
+                                      invoice.dueDate
+                                    ).toLocaleDateString("en-GB", {
                                       day: "2-digit",
                                       month: "short",
                                       year: "numeric",
@@ -310,7 +324,9 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                               <td className="px-6 py-4 whitespace-nowrap w-32">
                                 <span
                                   className={`text-sm ${
-                                    countdowns[invoice.id]?.toLowerCase().includes("ago")
+                                    countdowns[invoice.id]
+                                      ?.toLowerCase()
+                                      .includes("ago")
                                       ? "text-red-500"
                                       : "text-gray-500"
                                   }`}
@@ -320,7 +336,9 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-right w-20">
                                 <button
-                                  onClick={() => handleDeleteInvoice(invoice.id)}
+                                  onClick={() =>
+                                    handleDeleteInvoice(invoice.id)
+                                  }
                                   className="text-red-500 hover:text-red-700 transition-colors p-2 hover:bg-red-50 rounded-full"
                                   title="Delete Invoice"
                                 >
@@ -344,6 +362,10 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
               <InvoiceCreationPanel
                 onUpload={() => {}}
                 onCreateInvoice={() => {}}
+                onClose={() => {
+                  setViewMode("list");
+                  setInvoiceMode(null);
+                }}
               />
             </div>
           ) : null}

@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Search,
   ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 import { Switch } from "../ui/switch";
 import InvoiceModal from "../InvoiceModal";
@@ -30,6 +31,7 @@ import { addDays } from "date-fns";
 interface InvoiceCreationPanelProps {
   onUpload: () => void;
   onCreateInvoice: () => void;
+  onClose: () => void;
 }
 
 interface Customer {
@@ -72,6 +74,7 @@ interface ItemUpdate {
 const InvoiceCreationPanel = ({
   // onUpload,
   onCreateInvoice,
+  onClose,
 }: InvoiceCreationPanelProps) => {
   const {
     invoiceData,
@@ -477,9 +480,17 @@ const InvoiceCreationPanel = ({
       >
         {/* Fixed Header - Make it truly fixed for mobile */}
         <div className="flex-none px-4 pt-4 border-b border-gray-100 bg-white md:px-6 md:pt-6">
-          <h1 className="text-lg font-semibold mb-4 md:text-2xl md:mb-6">
-            Create invoice
-          </h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-lg font-semibold md:text-2xl">
+              Create invoice
+            </h1>
+            {isMobileView && (
+              <Button variant="ghost" onClick={onClose} className="-ml-2">
+                <ArrowLeft className="mr-2" size={16} />
+                
+              </Button>
+            )}
+          </div>
 
           {/* Tabs - Mobile optimized */}
           <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-none">

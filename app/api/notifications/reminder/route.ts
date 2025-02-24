@@ -16,11 +16,9 @@ interface EmailData {
 }
 
 export async function POST(req: Request) {
-  console.log('Received reminder request');
   const resendApiKey = process.env.RESEND_API_KEY;
 
   if (!resendApiKey) {
-    console.error('RESEND_API_KEY not configured');
     return NextResponse.json(
       { error: "RESEND_API_KEY is not configured" },
       { status: 500 }
@@ -31,7 +29,6 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    console.log('Reminder request body:', body);
 
     const { to, invoiceId, dueDate, amount }: ReminderRequestBody = body;
 
@@ -81,10 +78,8 @@ export async function POST(req: Request) {
       `,
     };
 
-    console.log('Sending email with data:', emailData);
 
     const data = await resend.emails.send(emailData);
-    console.log('Email sent successfully:', data);
 
     if (!data.data) {
       return NextResponse.json(
