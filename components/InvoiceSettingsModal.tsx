@@ -13,12 +13,6 @@ import { reminderService } from '@/services/appwrite/reminderService';
 type ReminderInterval = "daily" | "weekly" | "biweekly" | "monthly";
 type InvoiceStatus = "sent" | "pending" | "failed";
 
-interface InvoiceDetails {
-  invoiceDate: string;
-  dueDate: string;
-  amount: number;
-  invoiceName: string;
-}
 
 interface InvoiceSettingsModalProps {
   isOpen: boolean;
