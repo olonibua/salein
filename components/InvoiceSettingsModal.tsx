@@ -173,25 +173,29 @@ const InvoiceSettingsModal = ({
     }
   };
 
+  // Add email validation function
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return email && emailRegex.test(email);
+  };
+
   // Event handlers
   const handleSave = async () => {
     if (loading) return;
+    
+    // Validate recipient email
+    if (!isValidEmail(settings.recipientEmail)) {
+      toast.error("Please enter a valid recipient email address");
+      return;
+    }
+
     setLoading(true);
     
     try {
-      if (!settings.recipientEmail) {
-        toast.error("Recipient email is required");
-        return;
-      }
-
-const uploadedDetails = isUploadedInvoice
-  ? settings.uploadedInvoiceDetails
-  : uploadedInvoiceDetails;
-
       await onSendInvoice(
         settings.recipientEmail, 
         settings.teamEmails,
-        uploadedDetails
+        settings.uploadedInvoiceDetails
       );
       
       const invoiceRecord: InvoiceRecord = {
@@ -494,7 +498,7 @@ const uploadedDetails = isUploadedInvoice
             <Button 
               className="flex-1 bg-black text-white"
               onClick={handleSave}
-              disabled={loading}
+              disabled={!isValidEmail(settings.recipientEmail) || loading}
             >
               {loading ? "Sending..." : "Send Invoice"}
             </Button>

@@ -46,20 +46,20 @@ const InvoiceModal = ({
   const [isUploadMode, setIsUploadMode] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  const handleCopyLink = async () => {
-    try {
-      const invoiceLink = `${window.location.origin}/invoice/${invoiceData.invoiceNumber}`;
-      await navigator.clipboard.writeText(invoiceLink);
-      toast.success("Invoice link copied to clipboard");
-    } catch (err) {
-      console.error("Failed to copy link:", err);
-      toast.error("Failed to copy link to clipboard");
-    }
-  };
+  // const handleCopyLink = async () => {
+  //   try {
+  //     const invoiceLink = `${window.location.origin}/invoice/${invoiceData.invoiceNumber}`;
+  //     await navigator.clipboard.writeText(invoiceLink);
+  //     toast.success("Invoice link copied to clipboard");
+  //   } catch (err) {
+  //     console.error("Failed to copy link:", err);
+  //     toast.error("Failed to copy link to clipboard");
+  //   }
+  // };
 
-  const handleGetQRCode = () => {
-    // setShowQR(!showQR);
-  };
+  // const handleGetQRCode = () => {
+  //   // setShowQR(!showQR);
+  // };
 
   const handleDownloadPDF = () => {
     const invoice = document.getElementById("invoice-content");
@@ -168,7 +168,7 @@ const InvoiceModal = ({
           subject: `Invoice: ${invoiceDetails.invoiceName || "New Invoice"}`,
           htmlContent: emailContent,
           pdfBuffer: Array.from(new Uint8Array(pdfBuffer)),
-          fileName: `invoice-${Date.now()}.pdf`,
+          fileName: `invoice-${invoiceData.invoiceNumber}.pdf`,
         }),
       });
 
@@ -240,7 +240,7 @@ const InvoiceModal = ({
 
             {/* Action Buttons */}
             <div className="grid grid-cols-3 gap-4">
-              <Button
+              {/* <Button
                 variant="outline"
                 className="flex flex-col items-center gap-2 p-4 h-auto"
                 onClick={handleCopyLink}
@@ -255,7 +255,7 @@ const InvoiceModal = ({
               >
                 <QrCode size={20} />
                 <span className="text-sm">Get QR code</span>
-              </Button>
+              </Button> */}
               <Button
                 variant="outline"
                 className="flex flex-col items-center gap-2 p-4 h-auto"

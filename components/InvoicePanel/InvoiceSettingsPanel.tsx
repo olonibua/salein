@@ -11,6 +11,13 @@ import UploadInvoiceModal from "../Invoice/UploadInvoiceModal";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
+interface InvoiceDetails {
+  invoiceDate: string;
+  dueDate: string;
+  amount: number;
+  invoiceName: string;
+}
+
 // interface TeamMember {
 //   email: string;
 //   id: string;
@@ -140,6 +147,63 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
     } catch (error) {
       console.error("Error deleting invoice:", error);
       toast.error("Failed to delete invoice");
+    }
+  };
+
+  const handleSendInvoice = async (
+    recipientEmail: string,
+    teamEmails: string[] = [],
+    uploadedDetails?: InvoiceDetails
+  ) => {
+    let status: "sent" | "pending" | "failed" = "pending";
+    
+    try {
+      // ... existing send logic ...
+      
+      const response = await fetch("/api/notifications/send", {
+        // ... existing request config ...
+      });
+
+      if (!response.ok) {
+        status = "failed";
+        throw new Error("Failed to send invoice");
+      }
+
+      status = "sent";
+      toast.success("Invoice sent successfully");
+    } catch (error) {
+      status = "failed";
+      console.error("Error sending invoice:", error);
+      toast.error("Failed to send invoice");
+    }
+
+    // Create invoice record with proper status
+    const invoiceRecord: InvoiceRecord = {
+      id: `INV-${Date.now()}`,
+      recipientEmail,
+      status,
+      createdAt: new Date().toISOString(),
+      amount: uploadedDetails?.amount || 0,
+      teamEmails,
+      reminderEnabled: false,
+      reminderInterval: "weekly",
+      reminderCount: 3,
+      invoiceDate: uploadedDetails?.invoiceDate || new Date().toISOString(),
+      dueDate: uploadedDetails?.dueDate || new Date().toISOString()
+    };
+
+    // Save to localStorage with the correct status
+    saveInvoiceToStorage(invoiceRecord);
+  };
+
+  const saveInvoiceToStorage = (invoiceData: InvoiceRecord) => {
+    try {
+      const existingInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+      const updatedInvoices = [invoiceData, ...existingInvoices];
+      localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
+      window.dispatchEvent(new Event('invoiceUpdated'));
+    } catch (error) {
+      console.error('Error saving to localStorage:', error);
     }
   };
 

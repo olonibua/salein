@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState } from "react";
 import { addDays } from 'date-fns';
+import { generateInvoiceNumber } from "@/utils/invoiceUtils";
 
 export interface InvoiceData {
   invoiceDate: string;
@@ -92,7 +93,7 @@ const initialInvoiceData: InvoiceData = {
     phone: ""
   },
   poNumber: "",
-  invoiceNumber: "Salein-934",
+  invoiceNumber: generateInvoiceNumber(),
   items: [],
   subtotal: 0,
   taxRate: 0.1,

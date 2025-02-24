@@ -153,7 +153,7 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
                       <p>Invoice date: {formatDate(invoiceData.invoiceDate) || "Not set"}</p>
                       <p>Due date: {formatDate(invoiceData.dueDate) || "Not set"}</p>
                       <p>Invoice no: #{invoiceData.invoiceNumber}</p>
-                      <p>PO no: {invoiceData.poNumber}</p>
+                      {/* <p>PO no: {invoiceData.poNumber}</p> */}
                     </div>
                   </div>
                 </div>
