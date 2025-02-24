@@ -23,13 +23,17 @@ interface InvoiceDetails {
 interface InvoiceSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSendInvoice: (recipientEmail: string, teamEmails: string[], uploadedDetails?: InvoiceDetails) => Promise<void>;
+  onSendInvoice: (
+    recipientEmail: string, 
+    teamEmails: string[], 
+    uploadedDetails?: UploadedInvoiceDetails
+  ) => Promise<void>;
   recipientEmail: string;
   invoiceDate?: string;
   dueDate?: string;
   amount?: number;
   isUploadedInvoice?: boolean;
-  uploadedInvoiceDetails?: InvoiceDetails;
+  uploadedInvoiceDetails?: UploadedInvoiceDetails;
 }
 
 interface UploadedInvoiceDetails {

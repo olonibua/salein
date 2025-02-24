@@ -11,7 +11,15 @@ interface UploadedInvoiceDetails {
   dueDate: string;
   amount: number;
   invoiceName: string;
-  paymentDetails: string;
+  paymentDetails?: string;
+}
+
+interface InvoiceDetails {
+  invoiceDate: string;
+  dueDate: string;
+  amount: number;
+  invoiceName: string;
+  paymentDetails?: string;
 }
 
 interface UploadInvoiceModalProps {
