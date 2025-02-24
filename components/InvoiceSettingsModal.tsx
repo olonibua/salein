@@ -192,10 +192,16 @@ const InvoiceSettingsModal = ({
     setLoading(true);
     
     try {
+      console.log('Before sending:', {
+        recipientEmail: settings.recipientEmail,
+        teamEmails: settings.teamEmails,
+        uploadedDetails: settings.uploadedInvoiceDetails
+      });
+
       await onSendInvoice(
         settings.recipientEmail, 
         settings.teamEmails,
-        settings.uploadedInvoiceDetails
+        isUploadedInvoice ? settings.uploadedInvoiceDetails : undefined  // Only pass uploadedDetails if it's an uploaded invoice
       );
       
       const invoiceRecord: InvoiceRecord = {

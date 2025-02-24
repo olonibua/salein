@@ -103,16 +103,27 @@ const InvoiceModal = ({
     teamEmails: string[] = [],
     uploadedDetails?: InvoiceDetails
   ) => {
+    console.log('1. Starting handleSendInvoice with:', {
+      recipientEmail,
+      teamEmails,
+      uploadedDetails
+    });
+    
     if (isSending) return;
     setIsSending(true);
 
     try {
+      console.log('2. Inside try block');
+      console.log('3. Invoice Data:', invoiceData);
+
       const invoiceDetails: InvoiceDetails = uploadedDetails || {
         invoiceDate: invoiceData.invoiceDate,
         dueDate: invoiceData.dueDate,
         amount: invoiceData.total,
         invoiceName: `Invoice #${invoiceData.invoiceNumber}`,
       };
+
+      console.log('4. Final Invoice Details:', invoiceDetails);
 
       const emailContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -123,7 +134,7 @@ const InvoiceModal = ({
                 ? `<p><strong>Invoice Name:</strong> ${invoiceDetails.invoiceName}</p>`
                 : ""
             }
-            <p><strong>Amount:</strong> ${invoiceDetails.amount}</p>
+            <p><strong>Amount:</strong> $${invoiceDetails.amount.toFixed(2)}</p>
             <p><strong>Invoice Date:</strong> ${invoiceDetails.invoiceDate}</p>
             <p><strong>Due Date:</strong> ${invoiceDetails.dueDate}</p>
           </div>

@@ -6,6 +6,7 @@ export interface CurrencyOption {
 
 export const allCurrencies: CurrencyOption[] = [
   { label: "US Dollar (USD)", value: "USD", symbol: "$" },
+  { label: "Naira (NGN)", value: "NGN", symbol: "₦" },
   { label: "Euro (EUR)", value: "EUR", symbol: "€" },
   { label: "British Pound (GBP)", value: "GBP", symbol: "£" },
   { label: "Japanese Yen (JPY)", value: "JPY", symbol: "¥" },
