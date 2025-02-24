@@ -11,12 +11,12 @@ import UploadInvoiceModal from "../Invoice/UploadInvoiceModal";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
-interface InvoiceDetails {
-  invoiceDate: string;
-  dueDate: string;
-  amount: number;
-  invoiceName: string;
-}
+// interface InvoiceDetails {
+//   invoiceDate: string;
+//   dueDate: string;
+//   amount: number;
+//   invoiceName: string;
+// }
 
 // interface TeamMember {
 //   email: string;
@@ -196,16 +196,16 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
   //   saveInvoiceToStorage(invoiceRecord);
   // };
 
-  const saveInvoiceToStorage = (invoiceData: InvoiceRecord) => {
-    try {
-      const existingInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-      const updatedInvoices = [invoiceData, ...existingInvoices];
-      localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
-      window.dispatchEvent(new Event('invoiceUpdated'));
-    } catch (error) {
-      console.error('Error saving to localStorage:', error);
-    }
-  };
+  // const saveInvoiceToStorage = (invoiceData: InvoiceRecord) => {
+  //   try {
+  //     const existingInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+  //     const updatedInvoices = [invoiceData, ...existingInvoices];
+  //     localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
+  //     window.dispatchEvent(new Event('invoiceUpdated'));
+  //   } catch (error) {
+  //     console.error('Error saving to localStorage:', error);
+  //   }
+  // };
 
   return (
     <div
