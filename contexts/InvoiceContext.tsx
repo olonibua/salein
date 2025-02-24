@@ -53,6 +53,7 @@ export interface InvoiceData {
     value: string;
     symbol: string;
   };
+  paymentDetails: string;
 }
 
 interface InvoiceContextType {
@@ -105,7 +106,8 @@ const initialInvoiceData: InvoiceData = {
     label: "US Dollar (USD)",
     value: "USD",
     symbol: "$"
-  }
+  },
+  paymentDetails: '',
 };
 
 export function InvoiceProvider({ children }: { children: React.ReactNode }) {
