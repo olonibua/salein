@@ -4,11 +4,14 @@ import { Button } from "../ui/button";
 import InvoiceSettingsModal from "../InvoiceSettingsModal";
 import { toast } from "sonner";
 
+
+
 interface UploadedInvoiceDetails {
   invoiceDate: string;
   dueDate: string;
   amount: number;
   invoiceName: string;
+  paymentDetails: string;
 }
 
 interface UploadInvoiceModalProps {
@@ -107,6 +110,7 @@ const UploadInvoiceModal = ({
                   currency: 'USD'
                 }).format(uploadedInvoiceDetails.amount)}</p>` : ''}
                 ${uploadedInvoiceDetails?.dueDate ? `<p><strong>Due Date:</strong> ${new Date(uploadedInvoiceDetails.dueDate).toLocaleDateString()}</p>` : ''}
+                ${uploadedInvoiceDetails?.paymentDetails ? `<p style="font-family: monospace;"><strong>Payment Details:</strong> ${uploadedInvoiceDetails.paymentDetails}</p>` : ''}
               </div>
               
               <p>Please find the attached invoice document for your records.</p>
@@ -237,7 +241,8 @@ const UploadInvoiceModal = ({
           invoiceDate: new Date().toISOString().split('T')[0],
           dueDate: '',
           amount: 0,
-          invoiceName: file?.name || ''
+          invoiceName: file?.name || '',
+          paymentDetails: '',
         }}
       />
     </>

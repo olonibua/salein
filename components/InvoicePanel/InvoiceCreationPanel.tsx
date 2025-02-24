@@ -1208,6 +1208,18 @@ const InvoiceCreationPanel = ({
                         placeholder="Add payment details"
                       />
                     </div>
+
+                    <div>
+                      <label className="text-sm mb-1 block">Bank/Wallet Details</label>
+                      <Input
+                        value={invoiceData.paymentDetails}
+                        onChange={(e) =>
+                          updateInvoiceData({ paymentDetails: e.target.value })
+                        }
+                        placeholder="Add bank account or wallet address for payment"
+                        className="font-mono"
+                      />
+                    </div>
                   </div>
                 </motion.div>
               </motion.div>

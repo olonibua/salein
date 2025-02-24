@@ -37,6 +37,7 @@ interface UploadedInvoiceDetails {
   dueDate: string;
   amount: number;
   invoiceName: string;
+  paymentDetails: string;
 }
 
 interface InvoiceSettings {
@@ -84,7 +85,8 @@ const InvoiceSettingsModal = ({
       invoiceDate: new Date().toISOString().split('T')[0],
       dueDate: addDays(new Date(), 30).toISOString().split('T')[0],
       amount: 0,
-      invoiceName: ""
+      invoiceName: "",
+      paymentDetails: ""
     }
   });
 
@@ -407,6 +409,25 @@ const InvoiceSettingsModal = ({
                     }
                     placeholder="0.00"
                     className="w-full mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium block">Payment Details</label>
+                  <Input
+                    type="text"
+                    value={settings.uploadedInvoiceDetails.paymentDetails}
+                    onChange={(e) =>
+                      setSettings(prev => ({
+                        ...prev,
+                        uploadedInvoiceDetails: {
+                          ...prev.uploadedInvoiceDetails,
+                          paymentDetails: e.target.value
+                        }
+                      }))
+                    }
+                    placeholder="Add bank account or wallet address for payment"
+                    className="w-full mt-1 font-mono"
                   />
                 </div>
               </div>

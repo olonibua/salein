@@ -1,3 +1,11 @@
+export interface InvoiceDetails {
+  invoiceDate: string;
+  dueDate: string;
+  amount: number;
+  invoiceName: string;
+  paymentDetails: string;
+}
+
 export interface InvoiceData {
   recipientEmail: string;
   teamEmails: string[];
@@ -6,6 +14,7 @@ export interface InvoiceData {
   reminderEnabled: boolean;
   reminderInterval: "daily" | "weekly" | "biweekly" | "monthly";
   reminderCount: number;
+  paymentDetails: string;
 }
 
 export interface InvoiceTemplate {
@@ -28,3 +37,14 @@ export const invoiceTemplates: InvoiceTemplate[] = [
     layout: { fontFamily: "Inter", headerStyle: "classic", tableStyle: "simple", footerStyle: "basic" }
   }
 ];
+
+export const defaultInvoiceData: InvoiceData = {
+  recipientEmail: '',
+  teamEmails: [],
+  amount: 0,
+  status: 'pending',
+  reminderEnabled: false,
+  reminderInterval: 'daily',
+  reminderCount: 0,
+  paymentDetails: '',
+};

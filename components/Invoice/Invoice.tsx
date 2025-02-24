@@ -285,6 +285,11 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
                 <p className="text-sm text-gray-600 mb-1">
                   Payment Memo: {invoiceData.paymentMemo}
                 </p>
+                {invoiceData.paymentDetails && (
+                  <p className="text-sm font-mono text-gray-600 mb-1">
+                    Payment Details: {invoiceData.paymentDetails}
+                  </p>
+                )}
                 <p className="text-sm text-gray-600">{invoiceData.website}</p>
               </div>
             </div>

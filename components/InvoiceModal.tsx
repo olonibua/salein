@@ -37,6 +37,7 @@ interface InvoiceDetails {
     value: string;
     symbol: string;
   };
+  paymentDetails?: string;
 }
 
 const InvoiceModal = ({
@@ -126,7 +127,8 @@ const InvoiceModal = ({
         dueDate: invoiceData.dueDate,
         amount: invoiceData.total,
         invoiceName: `Invoice #${invoiceData.invoiceNumber}`,
-        currency: invoiceData.currency
+        currency: invoiceData.currency,
+        paymentDetails: invoiceData.paymentDetails
       };
 
       console.log('4. Final Invoice Details:', invoiceDetails);
@@ -143,6 +145,11 @@ const InvoiceModal = ({
             <p><strong>Amount:</strong> ${invoiceDetails.currency?.symbol || '$'}${invoiceDetails.amount.toFixed(2)}</p>
             <p><strong>Invoice Date:</strong> ${invoiceDetails.invoiceDate}</p>
             <p><strong>Due Date:</strong> ${invoiceDetails.dueDate}</p>
+            ${
+              invoiceDetails.paymentDetails
+                ? `<p style="font-family: monospace;"><strong>Payment Details:</strong> ${invoiceDetails.paymentDetails}</p>`
+                : ""
+            }
           </div>
           <p>Please find the attached invoice document.</p>
           ${
