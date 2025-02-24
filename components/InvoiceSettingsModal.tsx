@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { toast } from "sonner";
 import { addDays, addWeeks, addMonths } from 'date-fns';
+import { reminderService } from '@/services/appwrite/reminderService';
 
 // Types
 type ReminderInterval = "daily" | "weekly" | "biweekly" | "monthly";
@@ -103,35 +104,64 @@ const InvoiceSettingsModal = ({
   };
 
   const scheduleReminders = async (invoiceRecord: InvoiceRecord) => {
-    if (!settings.reminderEnabled) return;
+    if (!settings.reminderEnabled) {
+      console.log('Reminders not enabled, skipping');
+      return;
+    }
 
     const calculateNextReminderDate = (interval: ReminderInterval, index: number): Date => {
+      const now = new Date();
       const dueDate = new Date(invoiceRecord.dueDate);
+      const timeUntilDue = dueDate.getTime() - now.getTime();
+      const daysUntilDue = Math.ceil(timeUntilDue / (1000 * 60 * 60 * 24));
+
+      if (daysUntilDue <= 1) {
+        return new Date(now.getTime() + 1000 * 60); // Set to 1 minute from now
+      }
+
       switch (interval) {
-        case 'daily': return addDays(dueDate, -index);
-        case 'weekly': return addWeeks(dueDate, -index);
-        case 'biweekly': return addWeeks(dueDate, -(index * 2));
-        case 'monthly': return addMonths(dueDate, -index);
-        default: return dueDate;
+        case 'daily':
+          return addDays(now, index + 1);
+        case 'weekly':
+          const weeklyInterval = Math.max(1, Math.floor((daysUntilDue - 1) / settings.reminderCount));
+          return addDays(now, (index + 1) * weeklyInterval);
+        case 'biweekly':
+          const biweeklyInterval = Math.max(2, Math.floor((daysUntilDue - 1) / settings.reminderCount));
+          return addDays(now, (index + 1) * biweeklyInterval);
+        case 'monthly':
+          const monthlyInterval = Math.max(7, Math.floor((daysUntilDue - 1) / settings.reminderCount));
+          return addDays(now, (index + 1) * monthlyInterval);
+        default:
+          return addDays(now, 1);
       }
     };
 
     try {
-      const reminders = JSON.parse(localStorage.getItem('reminders') || '[]');
-      for (let i = 1; i <= settings.reminderCount; i++) {
-        const reminderDate = calculateNextReminderDate(settings.reminderInterval, i);
-        reminders.push({
-          invoiceId: invoiceRecord.id,
-          recipientEmail: invoiceRecord.recipientEmail,
-          dueDate: invoiceRecord.dueDate,
-          amount: amount,
-          sendDate: reminderDate.toISOString(),
-          status: 'pending' as ReminderStatus
-        });
+      const [hours, minutes] = settings.reminderTime.split(':').map(Number);
+      const currentDate = new Date();
+      const reminderDate = new Date(currentDate);
+      
+      // Set the reminder time to the user's selected time
+      reminderDate.setHours(hours, minutes, 0, 0);
+      
+      // If the time has already passed today, schedule for tomorrow
+      if (reminderDate < currentDate) {
+        reminderDate.setDate(reminderDate.getDate() + 1);
       }
-      localStorage.setItem('reminders', JSON.stringify(reminders));
+      
+      await reminderService.createReminder({
+        invoiceId: invoiceRecord.id,
+        recipientEmail: invoiceRecord.recipientEmail,
+        dueDate: invoiceRecord.dueDate,
+        amount: isUploadedInvoice ? settings.uploadedInvoiceDetails.amount : (amount || 0),
+        sendDate: reminderDate.toISOString()
+      });
+
+      console.log('Reminder scheduled for:', reminderDate.toISOString());
+      toast.success(`Reminder scheduled for ${reminderDate.toLocaleTimeString()}`);
     } catch (error) {
       console.error('Error scheduling reminders:', error);
+      toast.error('Failed to schedule reminders');
     }
   };
 

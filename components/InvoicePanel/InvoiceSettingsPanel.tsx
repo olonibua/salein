@@ -228,9 +228,7 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                               Invoice
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-44">
-                              Created At
-                            </th>
+                            
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-44">
                               Recipient
                             </th>
@@ -267,19 +265,7 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                                   {invoice.id}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap w-44">
-                                <span className="text-sm text-gray-500">
-                                  {invoice.createdAt
-                                    ? new Date(invoice.createdAt).toLocaleDateString("en-GB", {
-                                        day: "2-digit",
-                                        month: "short",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit"
-                                      })
-                                    : "N/A"}
-                                </span>
-                              </td>
+                              
                               <td className="px-6 py-4 whitespace-nowrap w-44">
                                 <span className="text-sm text-gray-500">
                                   {invoice.recipientEmail}
@@ -302,13 +288,15 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                                 £{(invoice.amount || 0).toFixed(2)}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 w-32">
-                                {invoice.invoiceDate
-                                  ? new Date(invoice.invoiceDate).toLocaleDateString("en-GB", {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    })
-                                  : "N/A"}
+                              {invoice.createdAt
+                                    ? new Date(invoice.createdAt).toLocaleDateString("en-GB", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit"
+                                      })
+                                    : "N/A"}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 w-32">
                                 {invoice.dueDate

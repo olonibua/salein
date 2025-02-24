@@ -3,7 +3,6 @@ import { Resend } from "resend";
 
 interface ReminderRequestBody {
   to: string;
-  subject: string;
   invoiceId: string;
   dueDate: string;
   amount: number;
@@ -16,11 +15,12 @@ interface EmailData {
   html: string;
 }
 
-
 export async function POST(req: Request) {
+  console.log('Received reminder request');
   const resendApiKey = process.env.RESEND_API_KEY;
 
   if (!resendApiKey) {
+    console.error('RESEND_API_KEY not configured');
     return NextResponse.json(
       { error: "RESEND_API_KEY is not configured" },
       { status: 500 }
@@ -30,8 +30,30 @@ export async function POST(req: Request) {
   const resend = new Resend(resendApiKey);
 
   try {
-    const { to, invoiceId, dueDate, amount }: ReminderRequestBody =
-      await req.json();
+    const body = await req.json();
+    console.log('Reminder request body:', body);
+
+    const { to, invoiceId, dueDate, amount }: ReminderRequestBody = body;
+
+    if (!to || !invoiceId || !dueDate) {
+      console.error('Missing required fields:', { to, invoiceId, dueDate });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const formattedAmount = new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP'
+    }).format(amount || 0);
+
+    const formattedDate = new Date(dueDate).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
 
     const emailData: EmailData = {
       from: "Salein <invoices@olonts.site>",
@@ -44,10 +66,8 @@ export async function POST(req: Request) {
           
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
             <p><strong>Invoice ID:</strong> ${invoiceId}</p>
-            <p><strong>Amount Due:</strong> ${amount}</p>
-            <p><strong>Due Date:</strong> ${new Date(
-              dueDate
-            ).toLocaleDateString()}</p>
+            <p><strong>Amount Due:</strong> ${formattedAmount}</p>
+            <p><strong>Due Date:</strong> ${formattedDate}</p>
           </div>
           
           <p>Please ensure your payment is made before the due date to avoid any late fees.</p>
@@ -61,13 +81,14 @@ export async function POST(req: Request) {
       `,
     };
 
-    // Sending the email
-    const data = await resend.emails.send(emailData);
+    console.log('Sending email with data:', emailData);
 
-    // Check for null values in the response
-    if (!data?.data || !data.data.id) {
+    const data = await resend.emails.send(emailData);
+    console.log('Email sent successfully:', data);
+
+    if (!data.data) {
       return NextResponse.json(
-        { error: "Failed to send email" },
+        { error: "Failed to send email: No response data" },
         { status: 500 }
       );
     }
@@ -75,7 +96,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, id: data.data.id });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Reminder email error:", err);
+    console.error("Failed to send reminder email:", err);
     return NextResponse.json(
       { error: "Failed to send reminder", details: err.message },
       { status: 500 }

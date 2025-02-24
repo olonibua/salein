@@ -13,7 +13,7 @@ export const updateInvoiceStatus = async ({
 }: UpdateStatusData): Promise<Models.Document> => {
   try {
     const response = await databases.updateDocument(
-      "database_id", // Replace with your database ID
+      "INVOICESDB_ID", // Replace with your database ID
       "collection_id", // Replace with your collection ID
       invoiceId,
       { status }
