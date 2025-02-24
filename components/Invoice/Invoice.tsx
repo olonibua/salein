@@ -21,10 +21,8 @@ const Invoice = ({ selectedTemplate = "modern-minimal" }: InvoiceProps) => {
   const [zoom, setZoom] = useState<number>(100);
   const { invoiceData, logo } = useInvoice();
 
-  console.log("Invoice data:", invoiceData);
 
   // Add console log to verify prop received
-  console.log("Logo received in Invoice:", logo);
 
   // Get selected template configuration
   const template = invoiceTemplates.find(t => t.id === selectedTemplate) || invoiceTemplates[0];

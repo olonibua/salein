@@ -115,7 +115,6 @@ const InvoiceSettingsModal = ({
 
   const scheduleReminders = async (invoiceRecord: InvoiceRecord) => {
     if (!settings.reminderEnabled) {
-      console.log('Reminders not enabled, skipping');
       return;
     }
 
@@ -167,7 +166,6 @@ const InvoiceSettingsModal = ({
         sendDate: reminderDate.toISOString()
       });
 
-      console.log('Reminder scheduled for:', reminderDate.toISOString());
       toast.success(`Reminder scheduled for ${reminderDate.toLocaleTimeString()}`);
     } catch (error) {
       console.error('Error scheduling reminders:', error);

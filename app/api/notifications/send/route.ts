@@ -52,9 +52,7 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("Sending email to:", to);
-    console.log("Attachment size:", pdfBuffer.length);
-
+  
     const emailData: EmailData = {
       from: "Salein <Salein@olonts.site>",
       to: [to],

@@ -8,17 +8,13 @@ export function ReminderChecker() {
 
   const checkAndSendReminders = async () => {
     try {
-      console.log('Checking reminders...');
       const dueReminders = await reminderService.getDueReminders();
-      console.log('Due reminders:', dueReminders.documents);
 
       if (dueReminders.documents.length === 0) {
-        console.log('No due reminders found');
         return;
       }
 
       await Promise.all(dueReminders.documents.map(async (reminder) => {
-        console.log('Processing reminder:', reminder);
         try {
           const response = await fetch('/api/notifications/reminder', {
             method: 'POST',
@@ -36,7 +32,6 @@ export function ReminderChecker() {
             throw new Error('Failed to send reminder');
           }
 
-          console.log('Reminder sent successfully, updating status');
           await reminderService.updateReminderStatus(reminder.$id, 'sent');
           
           if (!reminderToastShown.current.has(reminder.$id)) {

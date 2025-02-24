@@ -212,7 +212,6 @@ const InvoiceCreationPanel = ({
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogo(reader.result as string); // Directly set logo in context
-        console.log("Logo automatically applied");
       };
       reader.readAsDataURL(file);
     }
@@ -458,7 +457,6 @@ const InvoiceCreationPanel = ({
     field: "invoiceDate" | "dueDate",
     value: string
   ) => {
-    console.log(`Updating ${field} to:`, value); // Debug log
     updateInvoiceData({
       [field]: value,
     });
