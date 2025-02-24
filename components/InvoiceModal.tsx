@@ -109,18 +109,13 @@ const InvoiceModal = ({
     teamEmails: string[] = [],
     uploadedDetails?: InvoiceDetails
   ) => {
-    console.log('1. Starting handleSendInvoice with:', {
-      recipientEmail,
-      teamEmails,
-      uploadedDetails
-    });
+    
     
     if (isSending) return;
     setIsSending(true);
 
     try {
-      console.log('2. Inside try block');
-      console.log('3. Invoice Data:', invoiceData);
+      
 
       const invoiceDetails: InvoiceDetails = uploadedDetails || {
         invoiceDate: invoiceData.invoiceDate,
@@ -131,7 +126,6 @@ const InvoiceModal = ({
         paymentDetails: invoiceData.paymentDetails
       };
 
-      console.log('4. Final Invoice Details:', invoiceDetails);
 
       const emailContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
