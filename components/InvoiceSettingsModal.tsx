@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { toast } from "sonner";
-import { addDays, addWeeks, addMonths } from 'date-fns';
+import { addDays} from 'date-fns';
 import { reminderService } from '@/services/appwrite/reminderService';
 
 // Types
 type ReminderInterval = "daily" | "weekly" | "biweekly" | "monthly";
 type InvoiceStatus = "sent" | "pending" | "failed";
-type ReminderStatus = 'pending' | 'sent' | 'failed';
 
 interface InvoiceSettingsModalProps {
   isOpen: boolean;
@@ -88,6 +87,7 @@ const InvoiceSettingsModal = ({
   });
 
   const [loading, setLoading] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
 
   // Helper functions
   const saveInvoiceToStorage = (invoiceData: InvoiceRecord) => {
@@ -109,32 +109,32 @@ const InvoiceSettingsModal = ({
       return;
     }
 
-    const calculateNextReminderDate = (interval: ReminderInterval, index: number): Date => {
-      const now = new Date();
-      const dueDate = new Date(invoiceRecord.dueDate);
-      const timeUntilDue = dueDate.getTime() - now.getTime();
-      const daysUntilDue = Math.ceil(timeUntilDue / (1000 * 60 * 60 * 24));
+    // const calculateNextReminderDate = (interval: ReminderInterval, index: number): Date => {
+    //   const now = new Date();
+    //   const dueDate = new Date(invoiceRecord.dueDate);
+    //   const timeUntilDue = dueDate.getTime() - now.getTime();
+    //   const daysUntilDue = Math.ceil(timeUntilDue / (1000 * 60 * 60 * 24));
 
-      if (daysUntilDue <= 1) {
-        return new Date(now.getTime() + 1000 * 60); // Set to 1 minute from now
-      }
+    //   if (daysUntilDue <= 1) {
+    //     return new Date(now.getTime() + 1000 * 60); // Set to 1 minute from now
+    //   }
 
-      switch (interval) {
-        case 'daily':
-          return addDays(now, index + 1);
-        case 'weekly':
-          const weeklyInterval = Math.max(1, Math.floor((daysUntilDue - 1) / settings.reminderCount));
-          return addDays(now, (index + 1) * weeklyInterval);
-        case 'biweekly':
-          const biweeklyInterval = Math.max(2, Math.floor((daysUntilDue - 1) / settings.reminderCount));
-          return addDays(now, (index + 1) * biweeklyInterval);
-        case 'monthly':
-          const monthlyInterval = Math.max(7, Math.floor((daysUntilDue - 1) / settings.reminderCount));
-          return addDays(now, (index + 1) * monthlyInterval);
-        default:
-          return addDays(now, 1);
-      }
-    };
+    //   switch (interval) {
+    //     case 'daily':
+    //       return addDays(now, index + 1);
+    //     case 'weekly':
+    //       const weeklyInterval = Math.max(1, Math.floor((daysUntilDue - 1) / settings.reminderCount));
+    //       return addDays(now, (index + 1) * weeklyInterval);
+    //     case 'biweekly':
+    //       const biweeklyInterval = Math.max(2, Math.floor((daysUntilDue - 1) / settings.reminderCount));
+    //       return addDays(now, (index + 1) * biweeklyInterval);
+    //     case 'monthly':
+    //       const monthlyInterval = Math.max(7, Math.floor((daysUntilDue - 1) / settings.reminderCount));
+    //       return addDays(now, (index + 1) * monthlyInterval);
+    //     default:
+    //       return addDays(now, 1);
+    //   }
+    // };
 
     try {
       const [hours, minutes] = settings.reminderTime.split(':').map(Number);
@@ -228,6 +228,16 @@ const uploadedDetails = isUploadedInvoice
     );
   };
 
+  const handleAddEmail = () => {
+    if (emailInput && !settings.teamEmails.includes(emailInput)) {
+      setSettings(prev => ({
+        ...prev,
+        teamEmails: [...prev.teamEmails, emailInput]
+      }));
+      setEmailInput('');
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -266,20 +276,21 @@ const uploadedDetails = isUploadedInvoice
                   type="email"
                   placeholder="team@example.com"
                   className="flex-1"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      const input = e.target as HTMLInputElement;
-                      if (input.value && !settings.teamEmails.includes(input.value)) {
-                        setSettings(prev => ({
-                          ...prev,
-                          teamEmails: [...prev.teamEmails, input.value]
-                        }));
-                        input.value = '';
-                      }
+                      e.preventDefault();
+                      handleAddEmail();
                     }
                   }}
                 />
-                <Button variant="outline">Add</Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleAddEmail}
+                >
+                  Add
+                </Button>
               </div>
               <div className="space-y-2">
                 {settings.teamEmails.map((email) => (
