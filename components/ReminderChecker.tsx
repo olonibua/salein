@@ -1,9 +1,11 @@
 "use client";
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { reminderService } from '@/services/appwrite/reminderService';
 
 export function ReminderChecker() {
+  const reminderToastShown = useRef<Set<string>>(new Set());
+
   const checkAndSendReminders = async () => {
     try {
       console.log('Checking reminders...');
@@ -36,7 +38,11 @@ export function ReminderChecker() {
 
           console.log('Reminder sent successfully, updating status');
           await reminderService.updateReminderStatus(reminder.$id, 'sent');
-          toast.success('Payment reminder sent');
+          
+          if (!reminderToastShown.current.has(reminder.$id)) {
+            toast.success('Payment reminder sent');
+            reminderToastShown.current.add(reminder.$id);
+          }
         } catch (error) {
           console.error('Error processing reminder:', error);
           const newRetryCount = (reminder.retryCount || 0) + 1;
@@ -47,7 +53,10 @@ export function ReminderChecker() {
             await reminderService.updateRetryCount(reminder.$id, newRetryCount);
           }
           
-          toast.error('Failed to send payment reminder');
+          if (!reminderToastShown.current.has(reminder.$id)) {
+            toast.error('Failed to send payment reminder');
+            reminderToastShown.current.add(reminder.$id);
+          }
         }
       }));
     } catch (error) {
@@ -63,7 +72,10 @@ export function ReminderChecker() {
     const interval = setInterval(checkAndSendReminders, 60 * 1000);
 
     // Cleanup
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      reminderToastShown.current.clear();
+    };
   }, []);
 
   return null;

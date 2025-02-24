@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AddressFields } from "./AddressFields";
@@ -111,6 +111,8 @@ const InvoiceCreationPanel = ({
   const [hasStartedFilling, setHasStartedFilling] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isUploadedInvoice, setIsUploadedInvoice] = useState(false);
+
+  const mobileToastShown = useRef(false);
 
   // Type-safe handlers
   const handleFromDataChange = (field: string, value: string) => {
@@ -357,10 +359,11 @@ const InvoiceCreationPanel = ({
       setIsMobileView(mobile);
 
       // Show toast notification on mobile
-      if (mobile) {
+      if (mobile && !mobileToastShown.current) {
         toast.info("You're viewing the invoice creator in mobile mode", {
           duration: 3000,
         });
+        mobileToastShown.current = true;
       }
     };
 
@@ -447,21 +450,6 @@ const InvoiceCreationPanel = ({
     },
   };
 
-  // const formatDisplayDate = (dateString: string) => {
-  //   if (!dateString || dateString === "Invalid Date") return "";
-  //   try {
-  //     const date = new Date(dateString);
-  //     if (isNaN(date.getTime())) return "";
-  //     return date.toLocaleDateString("en-GB", {
-  //       day: "2-digit",
-  //       month: "2-digit",
-  //       year: "numeric",
-  //     });
-  //   } catch {
-  //     return "";
-  //   }
-  // };
-
   // Add date handling
   const handleDateChange = (
     field: "invoiceDate" | "dueDate",
@@ -472,13 +460,6 @@ const InvoiceCreationPanel = ({
       [field]: value,
     });
   };
-
-  // When file is uploaded
-  // const handleFileUpload = async (file: File) => {
-  //   // ... existing upload logic ...
-  //   setIsUploadedInvoice(true);
-  //   setShowInvoiceModal(true);
-  // };
 
   return (
     <>

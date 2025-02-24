@@ -4,7 +4,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { addDays} from 'date-fns';
 import { reminderService } from '@/services/appwrite/reminderService';
@@ -90,6 +90,14 @@ const InvoiceSettingsModal = ({
 
   const [loading, setLoading] = useState(false);
   const [emailInput, setEmailInput] = useState('');
+  const reminderToastShown = useRef(false);
+
+  // Reset toast ref when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      reminderToastShown.current = false;
+    }
+  }, [isOpen]);
 
   // Helper functions
   const saveInvoiceToStorage = (invoiceData: InvoiceRecord) => {
@@ -169,7 +177,9 @@ const InvoiceSettingsModal = ({
 
   // Event handlers
   const handleSave = async () => {
+    if (loading) return;
     setLoading(true);
+    
     try {
       if (!settings.recipientEmail) {
         toast.error("Recipient email is required");
@@ -206,8 +216,8 @@ const uploadedDetails = isUploadedInvoice
       onClose();
       toast.success("Invoice sent successfully!");
     } catch (error) {
-      toast.error("Failed to send invoice");
       console.error(error);
+      toast.error("Failed to send invoice");
     } finally {
       setLoading(false);
     }
@@ -215,19 +225,17 @@ const uploadedDetails = isUploadedInvoice
 
   const handleReminderTimeChange = (time: string) => {
     setSettings(prev => ({ ...prev, reminderTime: time }));
-    toast.success(
-      <div className="flex flex-col gap-1">
-        <span className="font-medium">Reminder Time Set! ⏰</span>
-        <span className="text-sm text-gray-600">
-          Reminders will be sent at {time} on scheduled days
-        </span>
-      </div>,
-      {
-        duration: 4000,
-        className: "bg-gradient-to-r from-blue-50 to-indigo-50",
-        position: "bottom-right",
-      }
-    );
+    if (!reminderToastShown.current) {
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <span className="font-medium">Reminder Time Set! ⏰</span>
+          <span className="text-sm text-gray-600">
+            Reminders will be sent at {time} on scheduled days
+          </span>
+        </div>
+      );
+      reminderToastShown.current = true;
+    }
   };
 
   const handleAddEmail = () => {

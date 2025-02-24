@@ -79,13 +79,6 @@ const UploadInvoiceModal = ({
     uploadedInvoiceDetails?: UploadedInvoiceDetails
   ) => {
     try {
-      console.log('Sending invoice with details:', {
-        recipientEmail,
-        teamEmails,
-        uploadedInvoiceDetails,
-        fileName: file?.name
-      });
-
       if (!file || !recipientEmail) {
         toast.error("File and recipient email are required");
         return;
@@ -93,18 +86,6 @@ const UploadInvoiceModal = ({
 
       const fileBuffer = await file.arrayBuffer();
       const fileArray = Array.from(new Uint8Array(fileBuffer));
-
-      // Format amount and date for display
-      const formattedAmount = uploadedInvoiceDetails?.amount 
-        ? new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD'
-          }).format(uploadedInvoiceDetails.amount)
-        : 'N/A';
-
-      const formattedDueDate = uploadedInvoiceDetails?.dueDate
-        ? new Date(uploadedInvoiceDetails.dueDate).toLocaleDateString()
-        : 'N/A';
 
       const response = await fetch("/api/notifications/send", {
         method: "POST",
@@ -121,8 +102,11 @@ const UploadInvoiceModal = ({
               
               <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
                 <p><strong>Invoice Name:</strong> ${uploadedInvoiceDetails?.invoiceName || file.name}</p>
-                ${uploadedInvoiceDetails?.amount ? `<p><strong>Amount Due:</strong> ${formattedAmount}</p>` : ''}
-                ${uploadedInvoiceDetails?.dueDate ? `<p><strong>Due Date:</strong> ${formattedDueDate}</p>` : ''}
+                ${uploadedInvoiceDetails?.amount ? `<p><strong>Amount Due:</strong> ${new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'USD'
+                }).format(uploadedInvoiceDetails.amount)}</p>` : ''}
+                ${uploadedInvoiceDetails?.dueDate ? `<p><strong>Due Date:</strong> ${new Date(uploadedInvoiceDetails.dueDate).toLocaleDateString()}</p>` : ''}
               </div>
               
               <p>Please find the attached invoice document for your records.</p>
@@ -131,7 +115,7 @@ const UploadInvoiceModal = ({
                 uploadedInvoiceDetails?.dueDate
                   ? `
                 <p style="color: #666;">
-                  <strong>Note:</strong> Payment is due by ${formattedDueDate}. 
+                  <strong>Note:</strong> Payment is due by ${new Date(uploadedInvoiceDetails.dueDate).toLocaleDateString()}. 
                   Payment reminders will be sent automatically.
                 </p>
               `
@@ -150,14 +134,12 @@ const UploadInvoiceModal = ({
         }),
       });
 
-      console.log('API Response:', await response.json());
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to send invoice");
       }
 
-      toast.success("Invoice sent successfully!");
+      // Single success toast after all operations complete
       onClose();
       onUpload();
     } catch (error) {
