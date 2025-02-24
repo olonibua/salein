@@ -32,6 +32,11 @@ interface InvoiceDetails {
   dueDate: string;
   amount: number;
   invoiceName: string;
+  currency?: {
+    label: string;
+    value: string;
+    symbol: string;
+  };
 }
 
 const InvoiceModal = ({
@@ -121,6 +126,7 @@ const InvoiceModal = ({
         dueDate: invoiceData.dueDate,
         amount: invoiceData.total,
         invoiceName: `Invoice #${invoiceData.invoiceNumber}`,
+        currency: invoiceData.currency
       };
 
       console.log('4. Final Invoice Details:', invoiceDetails);
@@ -134,7 +140,7 @@ const InvoiceModal = ({
                 ? `<p><strong>Invoice Name:</strong> ${invoiceDetails.invoiceName}</p>`
                 : ""
             }
-            <p><strong>Amount:</strong> $${invoiceDetails.amount.toFixed(2)}</p>
+            <p><strong>Amount:</strong> ${invoiceDetails.currency?.symbol || '$'}${invoiceDetails.amount.toFixed(2)}</p>
             <p><strong>Invoice Date:</strong> ${invoiceDetails.invoiceDate}</p>
             <p><strong>Due Date:</strong> ${invoiceDetails.dueDate}</p>
           </div>
