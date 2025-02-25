@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent,  DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, File, Check, X, AlertTriangle, FileText } from 'lucide-react';
+import { motion,  } from 'framer-motion';
+import { Upload,  Check, X, AlertTriangle, FileText } from 'lucide-react';
 import InvoiceSettingsModal from "../InvoiceSettingsModal";
 import { toast } from "sonner";
 

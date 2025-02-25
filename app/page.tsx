@@ -82,7 +82,7 @@ export default function Home() {
     try {
       await logout();
       toast.success("Logged out successfully");
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to log out");
     }
   };
