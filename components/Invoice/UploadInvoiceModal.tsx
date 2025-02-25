@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { Upload, X, FileText, AlertCircle } from "lucide-react";
-import { Button } from "../ui/button";
+"use client";
+
+import { useState, useRef } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, File, Check, X, AlertTriangle, FileText } from 'lucide-react';
 import InvoiceSettingsModal from "../InvoiceSettingsModal";
 import { toast } from "sonner";
-
-
 
 interface UploadedInvoiceDetails {
   invoiceDate: string;
@@ -14,50 +16,44 @@ interface UploadedInvoiceDetails {
   paymentDetails?: string;
 }
 
-
-
 interface UploadInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpload: () => void;
 }
 
-const UploadInvoiceModal = ({
-  isOpen,
-  onClose,
-  onUpload,
-}: UploadInvoiceModalProps) => {
-  const [dragActive, setDragActive] = useState(false);
+const UploadInvoiceModal = ({ isOpen, onClose, onUpload }: UploadInvoiceModalProps) => {
   const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [recipientEmail, setRecipientEmail] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
-  const handleDrag = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    const file = e.dataTransfer.files?.[0];
-    validateAndSetFile(file);
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      validateAndSetFile(e.dataTransfer.files[0]);
+    }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    validateAndSetFile(file);
+    if (e.target.files && e.target.files.length > 0) {
+      validateAndSetFile(e.target.files[0]);
+    }
   };
 
   const validateAndSetFile = (file: File | undefined) => {
@@ -76,6 +72,14 @@ const UploadInvoiceModal = ({
 
     setError(null);
     setFile(file);
+  };
+
+  const clearFile = () => {
+    setFile(null);
+    setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSendInvoice = async (
@@ -156,82 +160,118 @@ const UploadInvoiceModal = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl max-w-2xl w-full">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Upload Invoice</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X size={20} />
-            </button>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-0 rounded-xl max-h-[90vh] max-w-[95vw]">
+          <div className="bg-gradient-to-br from-purple-600 to-indigo-800 py-6 px-6 text-white">
+            <DialogTitle className="text-xl sm:text-2xl font-bold">
+              Upload Invoice
+            </DialogTitle>
+            <p className="text-indigo-100 mt-1 text-sm sm:text-base">
+              Upload an existing invoice to send to your clients
+            </p>
           </div>
-
-          <div className="p-6">
+          
+          <div className="p-5 sm:p-6">
             <div
-              className={`border-2 border-dashed rounded-xl p-8 text-center ${
-                dragActive ? "border-blue-500 bg-blue-50" : "border-gray-200"
+              className={`border-2 border-dashed rounded-lg p-6 sm:p-8 transition-colors ${
+                isDragging 
+                  ? 'border-blue-400 bg-blue-50' 
+                  : error 
+                    ? 'border-red-200 bg-red-50' 
+                    : 'border-gray-200 hover:border-gray-300'
               }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-              {file ? (
-                <div className="flex items-center justify-center gap-3">
+              {!file ? (
+                <div className="flex flex-col items-center justify-center text-center">
+                  {error ? (
+                    <div className="text-red-500 mb-3">
+                      <AlertTriangle size={36} className="mx-auto mb-2" />
+                      <p className="text-sm">{error}</p>
+                    </div>
+                  ) : (
+                    <Upload 
+                      size={36} 
+                      className={`mx-auto mb-3 ${
+                        isDragging ? 'text-blue-500' : 'text-gray-400'
+                      }`} 
+                    />
+                  )}
+                  
+                  <h3 className="text-lg font-medium mb-2">
+                    {error ? 'Try again' : 'Drag & Drop your invoice here'}
+                  </h3>
+                  <p className="text-gray-500 text-sm mb-4">
+                    Support for PDF files only. Max size 5MB.
+                  </p>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="relative border-gray-300"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <span>Browse Files</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="sr-only"
+                      accept=".pdf"
+                      onChange={handleFileInput}
+                    />
+                  </Button>
+                </div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-center gap-3"
+                >
                   <FileText size={24} className="text-blue-500" />
                   <span className="font-medium">{file.name}</span>
                   <button
-                    onClick={() => setFile(null)}
-                    className="text-gray-400 hover:text-gray-600"
+                    onClick={clearFile}
+                    className="text-gray-400 hover:text-gray-600 p-1"
                   >
-                    <X size={16} />
+                    <X size={18} />
                   </button>
-                </div>
-              ) : (
-                <>
-                  <Upload size={32} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-600 mb-2">
-                    Drag and drop your invoice here, or{" "}
-                    <label className="text-blue-500 hover:text-blue-600 cursor-pointer">
-                      browse
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".pdf"
-                        onChange={handleFileInput}
-                      />
-                    </label>
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    Supports: PDF (Max size: 5MB)
-                  </p>
-                </>
+                </motion.div>
               )}
             </div>
-
+            
             {error && (
               <div className="mt-4 flex items-center gap-2 text-red-500 text-sm">
-                <AlertCircle size={16} />
+                <AlertTriangle size={16} />
                 <span>{error}</span>
               </div>
             )}
-
-            <div className="mt-6 flex gap-3 justify-end">
-              <Button variant="outline" onClick={onClose}>
+            
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="border-gray-300"
+              >
                 Cancel
               </Button>
               <Button
+                type="button"
                 disabled={!file || !!error}
                 onClick={() => setShowSettings(true)}
+                className={`bg-indigo-600 hover:bg-indigo-700 text-white ${
+                  !file || !!error ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
               >
-                Upload Invoice
+                <Check className="mr-2 h-4 w-4" />
+                Continue
               </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
 
       <InvoiceSettingsModal
         isOpen={showSettings}

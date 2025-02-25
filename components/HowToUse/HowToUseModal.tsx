@@ -24,32 +24,32 @@ const steps = [
   {
     title: "Create an Account",
     description: "Sign up for a free account to start creating and managing invoices.",
-    icon: <UserPlus className="w-12 h-12" />,
+    icon: <UserPlus className="w-10 h-10 md:w-12 md:h-12" />,
   },
   {
     title: "Create Invoice",
     description: "Create a professional invoice with our easy-to-use template.",
-    icon: <FileText className="w-12 h-12" />,
+    icon: <FileText className="w-10 h-10 md:w-12 md:h-12" />,
   },
   {
     title: "Upload Existing Invoice",
     description: "Already have an invoice? Upload it to our system for tracking and reminders.",
-    icon: <Upload className="w-12 h-12" />,
+    icon: <Upload className="w-10 h-10 md:w-12 md:h-12" />,
   },
   {
     title: "Send to Clients",
     description: "Send invoices directly to your clients with optional team members in CC.",
-    icon: <Mail className="w-12 h-12" />,
+    icon: <Mail className="w-10 h-10 md:w-12 md:h-12" />,
   },
   {
     title: "Set Reminders",
     description: "Configure automatic payment reminders to ensure timely payments.",
-    icon: <Bell className="w-12 h-12" />,
+    icon: <Bell className="w-10 h-10 md:w-12 md:h-12" />,
   },
   {
     title: "Track Payments",
     description: "Monitor payment status and keep track of your business cash flow.",
-    icon: <CheckCircle className="w-12 h-12" />,
+    icon: <CheckCircle className="w-10 h-10 md:w-12 md:h-12" />,
   },
 ];
 
@@ -70,7 +70,7 @@ const HowToUseModal = ({ isOpen, onClose }: HowToUseModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-black text-white rounded-xl border-none">
+      <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-black text-white rounded-xl border-none max-h-[90vh] max-w-[90vw]">
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -89,9 +89,9 @@ const HowToUseModal = ({ isOpen, onClose }: HowToUseModalProps) => {
             />
           </div>
 
-          <div className="pt-6 px-8 pb-8">
-            <div className="flex justify-between items-center mb-8 mt-4">
-              <h2 className="text-2xl font-medium">How to Use SaleIn</h2>
+          <div className="pt-6 px-4 sm:px-8 pb-6 sm:pb-8">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 mt-2 sm:mt-4">
+              <h2 className="text-xl sm:text-2xl font-medium mb-1 sm:mb-0">How to Use SaleIn</h2>
               <div className="text-sm text-gray-400">
                 Step {currentStep + 1} of {steps.length}
               </div>
@@ -104,10 +104,10 @@ const HowToUseModal = ({ isOpen, onClose }: HowToUseModalProps) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="flex flex-col items-center justify-center py-10 px-6"
+                className="flex flex-col items-center justify-center py-5 sm:py-10 px-2 sm:px-6"
               >
                 <motion.div 
-                  className="text-blue-400 mb-6"
+                  className="text-blue-400 mb-4 sm:mb-6"
                   initial={{ scale: 0.8 }}
                   animate={{ scale: 1 }}
                   transition={{ 
@@ -118,14 +118,14 @@ const HowToUseModal = ({ isOpen, onClose }: HowToUseModalProps) => {
                 >
                   {steps[currentStep].icon}
                 </motion.div>
-                <h3 className="text-xl font-medium mb-3">{steps[currentStep].title}</h3>
-                <p className="text-gray-400 text-center max-w-md">
+                <h3 className="text-lg sm:text-xl font-medium mb-2 sm:mb-3 text-center">{steps[currentStep].title}</h3>
+                <p className="text-gray-400 text-center max-w-md text-sm sm:text-base">
                   {steps[currentStep].description}
                 </p>
               </motion.div>
             </AnimatePresence>
 
-            <div className="flex justify-between mt-6">
+            <div className="flex justify-between mt-4 sm:mt-6">
               <Button
                 variant="outline"
                 size="sm"
@@ -135,10 +135,10 @@ const HowToUseModal = ({ isOpen, onClose }: HowToUseModalProps) => {
                   currentStep === 0 
                     ? 'opacity-50 cursor-not-allowed' 
                     : 'opacity-100'
-                } bg-transparent border border-gray-700 text-white hover:bg-gray-800`}
+                } bg-transparent border border-gray-700 text-white hover:bg-gray-800 text-xs sm:text-sm px-2 sm:px-4`}
               >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Previous
+                <ChevronLeft className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="sm:inline">Previous</span>
               </Button>
               
               {currentStep < steps.length - 1 ? (
@@ -146,17 +146,17 @@ const HowToUseModal = ({ isOpen, onClose }: HowToUseModalProps) => {
                   variant="default"
                   size="sm"
                   onClick={goToNextStep}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 sm:px-4"
                 >
-                  Next
-                  <ChevronRight className="ml-2 h-4 w-4" />
+                  <span className="sm:inline">Next</span>
+                  <ChevronRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               ) : (
                 <Button
                   variant="default"
                   size="sm"
                   onClick={onClose}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 sm:px-4"
                 >
                   Get Started
                 </Button>

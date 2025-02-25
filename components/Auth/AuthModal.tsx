@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { Loader2, User, Mail, KeyRound } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -59,12 +59,15 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            {isLogin ? 'Sign In' : 'Create Account'}
+      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden border-0 rounded-xl max-h-[90vh] max-w-[95vw]">
+        <div className="bg-gradient-to-br from-blue-600 to-blue-800 py-6 px-6 text-white">
+          <DialogTitle className="text-xl sm:text-2xl font-bold">
+            {isLogin ? 'Welcome Back' : 'Create Your Account'}
           </DialogTitle>
-        </DialogHeader>
+          <p className="text-blue-100 mt-1 text-sm sm:text-base">
+            {isLogin ? 'Sign in to access your invoices' : 'Join SaleIn to start managing invoices'}
+          </p>
+        </div>
         
         <AnimatePresence mode="wait">
           <motion.form 
@@ -74,12 +77,13 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
             onSubmit={handleSubmit} 
-            className="space-y-4 mt-4"
+            className="space-y-4 px-6 py-5 sm:py-6"
           >
             {!isLogin && (
               <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">
-                  Full Name
+                <label htmlFor="name" className="text-sm font-medium flex items-center gap-2 text-gray-700">
+                  <User size={16} className="text-gray-400" />
+                  <span>Full Name</span>
                 </label>
                 <Input
                   id="name"
@@ -88,13 +92,15 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
                   onChange={(e) => setName(e.target.value)}
                   required
                   placeholder="John Doe"
+                  className="h-10 sm:h-11"
                 />
               </div>
             )}
             
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email Address
+              <label htmlFor="email" className="text-sm font-medium flex items-center gap-2 text-gray-700">
+                <Mail size={16} className="text-gray-400" />
+                <span>Email Address</span>
               </label>
               <Input
                 id="email"
@@ -103,12 +109,14 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="email@example.com"
+                className="h-10 sm:h-11"
               />
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
+              <label htmlFor="password" className="text-sm font-medium flex items-center gap-2 text-gray-700">
+                <KeyRound size={16} className="text-gray-400" />
+                <span>Password</span>
               </label>
               <Input
                 id="password"
@@ -117,12 +125,13 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
+                className="h-10 sm:h-11"
               />
             </div>
             
             <Button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full h-10 sm:h-11 mt-2 bg-blue-600 hover:bg-blue-700 transition-all duration-300"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -135,11 +144,11 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
               )}
             </Button>
             
-            <div className="text-center mt-4">
+            <div className="text-center pt-2">
               <button
                 type="button"
                 onClick={toggleAuthMode}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors"
               >
                 {isLogin ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
               </button>
