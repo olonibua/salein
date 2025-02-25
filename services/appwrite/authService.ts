@@ -1,11 +1,16 @@
 import { Client, Account, ID } from 'appwrite';
 
 // Initialize the Appwrite client
-const client = new Client()
-    .setEndpoint('https://cloud.appwrite.io/v1') // Replace with your Appwrite endpoint
-    .setProject('your-project-id'); // Replace with your project ID
+if (
+  !process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT ||
+  !process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID
+) {
+  throw new Error("Appwrite environment variables are not defined");
+}
 
-// Initialize the Account instance
+const client = new Client()
+  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
+  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID);
 const account = new Account(client);
 
 export interface UserSession {

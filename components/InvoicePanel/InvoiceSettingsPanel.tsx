@@ -10,18 +10,8 @@ import Invoice from "../Invoice/Invoice";
 import UploadInvoiceModal from "../Invoice/UploadInvoiceModal";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-
-// interface InvoiceDetails {
-//   invoiceDate: string;
-//   dueDate: string;
-//   amount: number;
-//   invoiceName: string;
-// }
-
-// interface TeamMember {
-//   email: string;
-//   id: string;
-// }
+import { useAuth } from "@/contexts/AuthContext";
+import AuthModal from "@/components/Auth/AuthModal";
 
 interface InvoiceSettingsPanelProps {
   onBack: () => void;
@@ -45,8 +35,9 @@ interface InvoiceRecord {
   dueDate: string;
 }
 
-const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
+const InvoiceSettingsPanel = ({ onBack }: InvoiceSettingsPanelProps) => {
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const { isAuthenticated } = useAuth();
   
   // State with proper typing
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -57,6 +48,8 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [countdowns, setCountdowns] = useState<{ [key: string]: string }>({});
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
 
   // Add useEffect to load invoices from localStorage
   useEffect(() => {
@@ -112,8 +105,20 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
     return () => clearInterval(interval);
   }, [invoiceRecords]);
 
-  // Handle mode selection
+  // Handle mode selection with auth check
   const handleModeSelection = (mode: InvoiceMode) => {
+    if (!isAuthenticated) {
+      // User is not authenticated
+      setAuthMode("login");
+      setShowAuthModal(true);
+      toast.error("Please sign in to create or upload invoices", {
+        duration: 3000,
+        position: "top-center"
+      });
+      return;
+    }
+
+    // User is authenticated, proceed normally
     if (mode === "upload") {
       setShowUploadModal(true);
     } else {
@@ -150,63 +155,7 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
     }
   };
 
-  // const handleSendInvoice = async (
-  //   recipientEmail: string,
-  //   teamEmails: string[] = [],
-  //   uploadedDetails?: InvoiceDetails
-  // ) => {
-  //   let status: "sent" | "pending" | "failed" = "pending";
-    
-  //   try {
-  //     // ... existing send logic ...
-      
-  //     const response = await fetch("/api/notifications/send", {
-  //       // ... existing request config ...
-  //     });
-
-  //     if (!response.ok) {
-  //       status = "failed";
-  //       throw new Error("Failed to send invoice");
-  //     }
-
-  //     status = "sent";
-  //     toast.success("Invoice sent successfully");
-  //   } catch (error) {
-  //     status = "failed";
-  //     console.error("Error sending invoice:", error);
-  //     toast.error("Failed to send invoice");
-  //   }
-
-  //   // Create invoice record with proper status
-  //   const invoiceRecord: InvoiceRecord = {
-  //     id: `INV-${Date.now()}`,
-  //     recipientEmail,
-  //     status,
-  //     createdAt: new Date().toISOString(),
-  //     amount: uploadedDetails?.amount || 0,
-  //     teamEmails,
-  //     reminderEnabled: false,
-  //     reminderInterval: "weekly",
-  //     reminderCount: 3,
-  //     invoiceDate: uploadedDetails?.invoiceDate || new Date().toISOString(),
-  //     dueDate: uploadedDetails?.dueDate || new Date().toISOString()
-  //   };
-
-  //   // Save to localStorage with the correct status
-  //   saveInvoiceToStorage(invoiceRecord);
-  // };
-
-  // const saveInvoiceToStorage = (invoiceData: InvoiceRecord) => {
-  //   try {
-  //     const existingInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-  //     const updatedInvoices = [invoiceData, ...existingInvoices];
-  //     localStorage.setItem('invoices', JSON.stringify(updatedInvoices));
-  //     window.dispatchEvent(new Event('invoiceUpdated'));
-  //   } catch (error) {
-  //     console.error('Error saving to localStorage:', error);
-  //   }
-  // };
-
+ 
   return (
     <div
       className={cn("flex w-full h-screen bg-gray-50", {
@@ -225,6 +174,7 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
                 onClick={() => {
                   setViewMode("list");
                   setInvoiceMode(null);
+                  onBack();
                 }}
                 className="flex items-center"
               >
@@ -447,6 +397,13 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         onUpload={handleInvoiceUploaded}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        initialMode={authMode}
       />
     </div>
   );

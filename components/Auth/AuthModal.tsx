@@ -19,6 +19,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const { login, signup, isLoading } = useAuth();
   
   // This effect will run when initialMode changes or when the modal opens
@@ -35,6 +36,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     try {
       if (isLogin) {
@@ -44,8 +46,9 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
         await signup(email, password, name);
         onClose();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth error:', error);
+      setError(error.message || "Authentication failed. Please try again.");
     }
   };
 
@@ -129,6 +132,12 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
               />
             </div>
             
+            {error && (
+              <div className="text-red-500 text-sm mt-2 p-2 bg-red-50 rounded border border-red-200">
+                {error}
+              </div>
+            )}
+            
             <Button 
               type="submit" 
               className="w-full h-10 sm:h-11 mt-2 bg-blue-600 hover:bg-blue-700 transition-all duration-300"
@@ -144,7 +153,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
               )}
             </Button>
             
-            <div className="text-center pt-2">
+            <div className="text-center mt-4">
               <button
                 type="button"
                 onClick={toggleAuthMode}
