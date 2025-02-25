@@ -46,9 +46,13 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }: AuthModalProps) =
         await signup(email, password, name);
         onClose();
       }
-    } catch (error: any) {
-      console.error('Auth error:', error);
-      setError(error.message || "Authentication failed. Please try again.");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Auth error:", error);
+        setError(error.message || "Authentication failed. Please try again.");
+      } else {
+        setError("An unknown error occurred. Please try again.");
+      }
     }
   };
 
