@@ -82,13 +82,14 @@ export default function Home() {
     try {
       await logout();
       toast.success("Logged out successfully");
-    } catch (_error) {
+    } catch {
       toast.error("Failed to log out");
     }
   };
 
   return (
     <InvoiceProvider>
+      
       <div className="flex flex-col h-screen bg-gray-50">
         {/* Desktop and Mobile Header */}
         <nav className="sticky top-0 z-50 bg-white shadow-sm px-6 py-4 border-b border-gray-200">

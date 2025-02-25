@@ -27,7 +27,7 @@ const UploadInvoiceModal = ({ isOpen, onClose, onUpload }: UploadInvoiceModalPro
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState("");
+  const recipientEmail = "";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
