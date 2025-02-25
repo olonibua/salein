@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ReminderChecker } from "@/components/ReminderChecker";
 import { Toaster } from "sonner";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { InvoiceProvider } from "@/contexts/InvoiceContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,9 +25,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} font-sans antialiased`}>
       <body>
-        <Toaster richColors position="top-right" />
-        <ReminderChecker />
-        {children}
+        <AuthProvider>
+          <InvoiceProvider>
+            <Toaster richColors position="top-right" />
+            <ReminderChecker />
+            {children}
+          </InvoiceProvider>
+        </AuthProvider>
       </body>
     </html>
   );

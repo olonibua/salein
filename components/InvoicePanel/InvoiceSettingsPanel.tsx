@@ -10,6 +10,8 @@ import Invoice from "../Invoice/Invoice";
 import UploadInvoiceModal from "../Invoice/UploadInvoiceModal";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useAuth } from "@/contexts/AuthContext";
+import AuthModal from "@/components/Auth/AuthModal";
 
 // interface InvoiceDetails {
 //   invoiceDate: string;
@@ -45,8 +47,9 @@ interface InvoiceRecord {
   dueDate: string;
 }
 
-const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
+const InvoiceSettingsPanel = ({ onBack }: InvoiceSettingsPanelProps) => {
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const { isAuthenticated } = useAuth();
   
   // State with proper typing
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -57,6 +60,7 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [countdowns, setCountdowns] = useState<{ [key: string]: string }>({});
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Add useEffect to load invoices from localStorage
   useEffect(() => {
@@ -113,13 +117,15 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
   }, [invoiceRecords]);
 
   // Handle mode selection
-  const handleModeSelection = (mode: InvoiceMode) => {
-    if (mode === "upload") {
-      setShowUploadModal(true);
-    } else {
-      setInvoiceMode(mode);
-      setViewMode("create");
+  const handleModeSelection = (mode: "create" | "upload") => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to continue");
+      setShowAuthModal(true);
+      return;
     }
+    
+    setInvoiceMode(mode);
+    setViewMode("create");
   };
 
   const handleInvoiceUploaded = () => {
@@ -249,7 +255,11 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <button
                   onClick={() => handleModeSelection("create")}
-                  className="p-6 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all"
+                  className={`p-6 border rounded-xl transition-all ${
+                    !isAuthenticated 
+                      ? "opacity-60 border-gray-200" 
+                      : "hover:border-blue-500 hover:bg-blue-50"
+                  }`}
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-3 bg-blue-100 rounded-lg">
@@ -266,7 +276,11 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
 
                 <button
                   onClick={() => handleModeSelection("upload")}
-                  className="p-6 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all"
+                  className={`p-6 border rounded-xl transition-all ${
+                    !isAuthenticated 
+                      ? "opacity-60 border-gray-200" 
+                      : "hover:border-blue-500 hover:bg-blue-50"
+                  }`}
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-3 bg-blue-100 rounded-lg">
@@ -447,6 +461,12 @@ const InvoiceSettingsPanel = ({ }: InvoiceSettingsPanelProps) => {
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         onUpload={handleInvoiceUploaded}
+      />
+
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)}
+        initialMode="login"
       />
     </div>
   );

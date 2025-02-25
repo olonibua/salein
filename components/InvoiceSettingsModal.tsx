@@ -192,11 +192,7 @@ const InvoiceSettingsModal = ({
     setLoading(true);
     
     try {
-      console.log('Before sending:', {
-        recipientEmail: settings.recipientEmail,
-        teamEmails: settings.teamEmails,
-        uploadedDetails: settings.uploadedInvoiceDetails
-      });
+      
 
       await onSendInvoice(
         settings.recipientEmail, 
